@@ -54,6 +54,10 @@ const Dashboard = () => {
   const handleAuthorManagement = () => {
     navigate("/ManageAuthors"); // Chuyển hướng đến trang quản lý tác giả
   };
+  // hàm xử lý click cho thẻ li
+  const handlePublisherManagement = () => {
+    navigate("/ManagePublishers"); // Chuyển hướng đến trang quản lý nhà xuất bản
+  };
 
   return (
     <div className="flex">
@@ -63,6 +67,7 @@ const Dashboard = () => {
         <div className="p-4 text-lg font-bold">QUẢN LÍ THƯ VIỆN Nhóm 3</div>
         <ul className="space-y-2">
             <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleAuthorManagement}> Quản lý Tác giả </li>
+            <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handlePublisherManagement}> Quản lý Nhà Xuất Bản </li>
             {/* <li className="p-2 hover:bg-teal-600 cursor-pointer">Trang chủ</li>
             <li className="p-2 hover:bg-teal-600 cursor-pointer">Hệ thống</li>
             <li className="p-2 hover:bg-teal-600 cursor-pointer">Danh mục</li>
