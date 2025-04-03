@@ -57,6 +57,7 @@ const Dashboard = () => {
 
   return (
     <div className="flex">
+        
     {/* Sidebar */}
     <div className="w-1/5 bg-teal-500 text-white">
         <div className="p-4 text-lg font-bold">QUẢN LÍ THƯ VIỆN Nhóm 3</div>
@@ -71,6 +72,7 @@ const Dashboard = () => {
             <li className="p-2 hover:bg-teal-600 cursor-pointer">Báo cáo</li> */}
         </ul>
     </div>
+
     {/* Main Content */}
     <div className="w-4/5 bg-white p-4">
         <div className="flex justify-between items-center mb-4">
