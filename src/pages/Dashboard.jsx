@@ -44,28 +44,40 @@ const Dashboard = () => {
     URL.revokeObjectURL(url);
   };
   
-  
   // Xử lý đăng xuất
   const handleLogout = () => {
     localStorage.removeItem("user"); // Xóa dữ liệu đăng nhập
     navigate("/"); // Chuyển hướng về trang đăng nhập
   };
 
+  // hàm xử lý click cho thẻ li
+  const handleAuthorManagement = () => {
+    navigate("/ManageAuthors"); // Chuyển hướng đến trang quản lý tác giả
+  };
+  // hàm xử lý click cho thẻ li
+  const handlePublisherManagement = () => {
+    navigate("/ManagePublishers"); // Chuyển hướng đến trang quản lý nhà xuất bản
+  };
+
   return (
     <div className="flex">
+        
     {/* Sidebar */}
     <div className="w-1/5 bg-teal-500 text-white">
         <div className="p-4 text-lg font-bold">QUẢN LÍ THƯ VIỆN Nhóm 3</div>
         <ul className="space-y-2">
-            <li className="p-2 hover:bg-teal-600 cursor-pointer">Trang chủ</li>
+            <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleAuthorManagement}> Quản lý Tác giả </li>
+            <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handlePublisherManagement}> Quản lý Nhà Xuất Bản </li>
+            {/* <li className="p-2 hover:bg-teal-600 cursor-pointer">Trang chủ</li>
             <li className="p-2 hover:bg-teal-600 cursor-pointer">Hệ thống</li>
             <li className="p-2 hover:bg-teal-600 cursor-pointer">Danh mục</li>
             <li className="p-2 hover:bg-teal-600 cursor-pointer">Quản lý kho kệ</li>
             <li className="p-2 hover:bg-teal-600 cursor-pointer">Quản lý xuất nhập</li>
             <li className="p-2 hover:bg-teal-600 cursor-pointer">Quản lý mượn trả</li>
-            <li className="p-2 hover:bg-teal-600 cursor-pointer">Báo cáo</li>
+            <li className="p-2 hover:bg-teal-600 cursor-pointer">Báo cáo</li> */}
         </ul>
     </div>
+
     {/* Main Content */}
     <div className="w-4/5 bg-white p-4">
         <div className="flex justify-between items-center mb-4">
