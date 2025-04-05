@@ -59,6 +59,14 @@ const Dashboard = () => {
     navigate("/ManagePublishers"); // Chuyển hướng đến trang quản lý nhà xuất bản
   };
 
+  const handleCategoryManagement = () => {
+    navigate("/ManageCategory"); // Chuyển hướng đến trang quản lý nhà xuất bản
+  };
+
+  const handleBookManagement = () => {
+    navigate("/ManageBook"); // Chuyển hướng đến trang quản lý nhà xuất bản
+  };
+
   return (
     <div className="flex">
         
@@ -68,6 +76,9 @@ const Dashboard = () => {
         <ul className="space-y-2">
             <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleAuthorManagement}> Quản lý Tác giả </li>
             <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handlePublisherManagement}> Quản lý Nhà Xuất Bản </li>
+          <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleCategoryManagement}> Quản lý Loại Sách </li>
+          <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleBookManagement}> Quản Thông Tin Sách </li>
+            
             {/* <li className="p-2 hover:bg-teal-600 cursor-pointer">Trang chủ</li>
             <li className="p-2 hover:bg-teal-600 cursor-pointer">Hệ thống</li>
             <li className="p-2 hover:bg-teal-600 cursor-pointer">Danh mục</li>
