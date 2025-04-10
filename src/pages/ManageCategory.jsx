@@ -1,125 +1,101 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 
 const ManageCategory = () => {
-  const [categories, setCategories] = useState([]);
-  const [newCategory, setNewCategory] = useState("");
+  // Dữ liệu mẫu cho Loại Sách
+  const [categorys, setcategorys] = useState([
+    { category_id: 1, category_name: "Trinh Thám" },
+    { category_id: 2, category_name: "Kinh Dị" },
+    { category_id: 3, category_name: "Cười" },
+    { category_id: 4, category_name: "Hành Động" },
+    { category_id: 5, category_name: "Giáo Khoa" },
+    { category_id: 6, category_name: "Giải" },
+  ]);
+
+  const [newcategory, setNewcategory] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState("");
 
-  // Lấy danh mục sách từ API
-  const fetchCategories = async () => {
-    try {
-      const res = await axios.get('/api/categories/all');
-      setCategories(res.data);
-    } catch (error) {
-      console.error("Lỗi khi tải danh mục sách:", error);
+  // Hàm thêm Loại Sách mới (giả lập)
+  const handleAddcategory = () => {
+    if (newcategory.trim() !== "") {
+      const newId = Math.max(...categorys.map(p => p.category_id)) + 1;
+      setcategorys([...categorys, { category_id: newId, category_name: newcategory }]);
+      setNewcategory("");
     }
   };
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  // Thêm danh mục sách mới
-  const handleAddCategory = async () => {
-    if (newCategory.trim() !== "") {
-      try {
-        const res = await axios.post('/api/categories/add', {
-          categoryName: newCategory
-        });
-        setCategories([...categories, res.data]);
-        setNewCategory("");
-      } catch (error) {
-        console.error("Lỗi khi thêm danh mục:", error);
-        alert("Thêm thất bại!");
-      }
-    }
+  // Hàm xóa Loại Sách (giả lập)
+  const handleDeletecategory = (id) => {
+    setcategorys(categorys.filter(category => category.category_id !== id));
   };
 
-  // Xoá danh mục sách
-  const handleDeleteCategory = async (id) => {
-    try {
-      await axios.delete(`/api/categories/delete/${id}`);
-      setCategories(categories.filter(c => c.categoryId !== id));
-    } catch (error) {
-      console.error("Lỗi khi xoá danh mục:", error);
-      alert("Xoá thất bại!");
-    }
-  };
-
-  // Bắt đầu chỉnh sửa
+  // Hàm bắt đầu chỉnh sửa
   const startEditing = (category) => {
-    setEditingId(category.categoryId);
-    setEditValue(category.categoryName);
+    setEditingId(category.category_id);
+    setEditValue(category.category_name);
   };
 
-  // Lưu chỉnh sửa danh mục
-  const saveEdit = async () => {
+  // Hàm lưu chỉnh sửa
+  const saveEdit = () => {
     if (editValue.trim() !== "") {
-      try {
-        const res = await axios.put(`/api/categories/edit/${editingId}`, {
-          categoryName: editValue
-        });
-        setCategories(categories.map(c =>
-          c.categoryId === editingId ? res.data : c
-        ));
-        setEditingId(null);
-        setEditValue("");
-      } catch (error) {
-        console.error("Lỗi khi cập nhật danh mục:", error);
-        alert("Cập nhật thất bại!");
-      }
+      setcategorys(categorys.map(category => 
+        category.category_id === editingId ? 
+        { ...category, category_name: editValue } : category
+      ));
+      setEditingId(null);
     }
   };
 
-  const filteredCategories = categories.filter(c =>
-    c.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
+  // Lọc Loại Sách theo từ khóa tìm kiếm
+  const filteredcategorys = categorys.filter(category => 
+    category.category_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6 text-blue-600">Quản Lý Loại Sách</h1>
-
-      {/* Tìm kiếm */}
+      
+      {/* Phần tìm kiếm */}
       <div className="mb-6">
-        <input
-          type="text"
-          placeholder="Tìm kiếm loại sách..."
-          className="p-2 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <div className="flex gap-4">
+          <input
+            type="text"
+            placeholder="Tìm kiếm Loại Sách..."
+            className="p-2 border rounded flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
-
-      {/* Thêm loại sách */}
+      
+      {/* Phần thêm Loại Sách mới */}
       <div className="mb-6 bg-blue-50 p-4 rounded shadow">
-        <h2 className="text-xl font-semibold mb-3 text-blue-700">Thêm Loại Sách Mới</h2>
+        <h2 className="text-xl font-semibold mb-3 text-blue-700">Thêm Nhà Loại Sách Mới</h2>
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder="Nhập tên loại sách mới..."
+            placeholder="Nhập tên Loại Sách mới..."
             className="p-2 border rounded flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
+            value={newcategory}
+            onChange={(e) => setNewcategory(e.target.value)}
           />
           <button
-            onClick={handleAddCategory}
+            onClick={handleAddcategory}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
           >
             Thêm
           </button>
         </div>
       </div>
-
-      {/* Danh sách loại sách */}
+      
+      {/* Danh sách Loại Sách */}
       <div className="bg-white rounded shadow overflow-hidden">
         <h2 className="text-xl font-semibold p-4 bg-gray-50 border-b">
-          Danh Sách Loại Sách ({filteredCategories.length})
+          Danh Sách Loại Sách ({filteredcategorys.length})
         </h2>
-
-        {filteredCategories.length > 0 ? (
+        
+        {filteredcategorys.length > 0 ? (
           <table className="w-full">
             <thead>
               <tr className="bg-gray-100 text-left">
@@ -129,11 +105,11 @@ const ManageCategory = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredCategories.map(category => (
-                <tr key={category.categoryId} className="border-t hover:bg-gray-50">
-                  <td className="p-3">{category.categoryId}</td>
+              {filteredcategorys.map(category => (
+                <tr key={category.category_id} className="border-t hover:bg-gray-50">
+                  <td className="p-3">{category.category_id}</td>
                   <td className="p-3">
-                    {editingId === category.categoryId ? (
+                    {editingId === category.category_id ? (
                       <input
                         type="text"
                         className="p-1 border rounded w-full"
@@ -141,11 +117,11 @@ const ManageCategory = () => {
                         onChange={(e) => setEditValue(e.target.value)}
                       />
                     ) : (
-                      category.categoryName
+                      category.category_name
                     )}
                   </td>
                   <td className="p-3 flex justify-center gap-2">
-                    {editingId === category.categoryId ? (
+                    {editingId === category.category_id ? (
                       <button
                         onClick={saveEdit}
                         className="bg-green-600 text-white px-2 py-1 rounded text-sm hover:bg-green-700"
@@ -161,7 +137,7 @@ const ManageCategory = () => {
                       </button>
                     )}
                     <button
-                      onClick={() => handleDeleteCategory(category.categoryId)}
+                      onClick={() => handleDeletecategory(category.category_id)}
                       className="bg-red-600 text-white px-2 py-1 rounded text-sm hover:bg-red-700"
                     >
                       Xóa
@@ -172,7 +148,7 @@ const ManageCategory = () => {
             </tbody>
           </table>
         ) : (
-          <p className="p-4 text-center text-gray-500">Không tìm thấy loại sách nào</p>
+          <p className="p-4 text-center text-gray-500">Không tìm thấy Loại Sách nào</p>
         )}
       </div>
     </div>
