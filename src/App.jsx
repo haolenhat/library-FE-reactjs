@@ -9,6 +9,7 @@ import ManageAuthors from './pages/ManageAuthor'
 import ManagePublishers from './pages/ManagePublisher'
 import ManageCategory from './pages/ManageCategory'
 import ManageBook from './pages/ManageBook'
+import ManageEmployeesInfos from './pages/ManageEmployeesInfo'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -22,6 +23,7 @@ function App() {
       <Route path="/ManageBook" element={<ManageBook />} />
       <Route path="/ManageCategory" element={<ManageCategory />} />
       <Route path="/ManagePublishers" element={<ManagePublishers />} />
+      <Route path="/ManageEmployeesInfos" element={<ManageEmployeesInfos />} />
     </Routes>
   )
 }
