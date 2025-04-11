@@ -96,6 +96,9 @@ const dashboard = () => {
   const handleBookManagement = () => {
     navigate("/ManageBook"); // Chuyển hướng đến trang quản lý thông tin sách
   };
+  const handleUserManagement = () => {
+    navigate("/ManageEmployeesInfos"); // Chuyển hướng đến trang quản lý thông tin người dùng
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("user"); // Xóa dữ liệu đăng nhập
@@ -112,7 +115,7 @@ const dashboard = () => {
           <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handlePublisherManagement}>Quản lý Nhà Xuất Bản</li>
           <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleCategoryManagement}>Quản lý Loại Sách</li>
           <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleBookManagement}>Quản Thông Tin Sách</li>
-
+          <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleUserManagement}>Quản lý Người Dùng</li>
           <li className="p-2 hover:bg-teal-600 cursor-pointer mt-8 text-red-200" onClick={handleLogout}>
             Đăng xuất
           </li>
