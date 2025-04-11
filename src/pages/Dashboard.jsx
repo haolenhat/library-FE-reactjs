@@ -2,188 +2,234 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const Dashboard = () => {
-  const [users, setUsers] = useState([]); // Danh sách user
-  const [search, setSearch] = useState(""); // Giá trị tìm kiếm
+const dashboard = () => {
+  const [users, setUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("http://localhost:8080/api/user/all"); // API lấy danh sách user
+        setIsLoading(true);
+        const response = await axios.get("http://localhost:8080/api/users/all");
         setUsers(response.data);
+        setError(null);
       } catch (error) {
-        console.error("Lỗi khi lấy dữ liệu:", error);
+        console.error("Error fetching users:", error);
+        setError("Failed to load users. Please try again later.");
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchUsers();
   }, []);
 
-  // Lọc danh sách user theo tên hoặc số điện thoại
-  const filteredUsers = users.filter((user) =>
-    user.name.toLowerCase().includes(search.toLowerCase()) ||
-    user.phone.includes(search)
+  // Filter users based on search term (name, email, or phone)
+  const filteredUsers = users.filter(
+    (user) =>
+      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.phone?.includes(searchTerm)
   );
 
-  // Xuất file CSV
+  // Handle checkbox selection
+  const handleSelectUser = (userId) => {
+    if (selectedUsers.includes(userId)) {
+      setSelectedUsers(selectedUsers.filter((id) => id !== userId));
+    } else {
+      setSelectedUsers([...selectedUsers, userId]);
+    }
+  };
+
+  // Handle select all checkbox
+  const handleSelectAll = () => {
+    if (selectedUsers.length === filteredUsers.length) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(filteredUsers.map((user) => user.user_id));
+    }
+  };
+
+  // Export to CSV functionality
   const exportToCSV = () => {
-    const csvHeader = "NO,Tên,Số điện thoại\n"; // Tiêu đề cột
-    const csvRows = filteredUsers.map((user) =>
-      `"${user.createdAt}","${user.name}","${user.phone}"`
+    const csvHeader = "ID,Họ tên,Email,Số điện thoại,Vai trò\n";
+    const csvRows = filteredUsers.map(
+      (user) =>
+        `"${user.user_id}","${user.full_name}","${user.email}","${user.phone}","${user.role}"`
     );
-  
-    const csvContent = "\uFEFF" + csvHeader + csvRows.join("\n"); // Thêm BOM (UTF-8)
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" }); // Đảm bảo UTF-8
+
+    const csvContent = "\uFEFF" + csvHeader + csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-  
+
     const a = document.createElement("a");
     a.href = url;
-    a.download = "data.csv";
+    a.download = "users.csv";
     a.click();
     URL.revokeObjectURL(url);
   };
-  
-  // Xử lý đăng xuất
-  const handleLogout = () => {
-    localStorage.removeItem("user"); // Xóa dữ liệu đăng nhập
-    navigate("/"); // Chuyển hướng về trang đăng nhập
+
+  // Get appropriate badge color based on role
+  const getRoleBadgeClass = (role) => {
+    return role === "ADMIN" 
+      ? "bg-red-500 text-white px-2 py-1 rounded"
+      : "bg-blue-500 text-white px-2 py-1 rounded";
   };
 
-  // hàm xử lý click cho thẻ li
+  // Navigation functions
   const handleAuthorManagement = () => {
     navigate("/ManageAuthors"); // Chuyển hướng đến trang quản lý tác giả
   };
-  // hàm xử lý click cho thẻ li
+
   const handlePublisherManagement = () => {
     navigate("/ManagePublishers"); // Chuyển hướng đến trang quản lý nhà xuất bản
   };
 
   const handleCategoryManagement = () => {
-    navigate("/ManageCategory"); // Chuyển hướng đến trang quản lý nhà xuất bản
+    navigate("/ManageCategory"); // Chuyển hướng đến trang quản lý loại sách
   };
 
   const handleBookManagement = () => {
-    navigate("/ManageBook"); // Chuyển hướng đến trang quản lý nhà xuất bản
+    navigate("/ManageBook"); // Chuyển hướng đến trang quản lý thông tin sách
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("user"); // Xóa dữ liệu đăng nhập
+    navigate("/"); // Chuyển hướng về trang đăng nhập
   };
 
   return (
     <div className="flex">
-        
-    {/* Sidebar */}
-    <div className="w-1/5 bg-teal-500 text-white">
+      {/* Sidebar */}
+      <div className="w-1/5 bg-teal-500 text-white min-h-screen">
         <div className="p-4 text-lg font-bold">QUẢN LÍ THƯ VIỆN Nhóm 3</div>
         <ul className="space-y-2">
-            <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleAuthorManagement}> Quản lý Tác giả </li>
-            <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handlePublisherManagement}> Quản lý Nhà Xuất Bản </li>
-          <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleCategoryManagement}> Quản lý Loại Sách </li>
-          <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleBookManagement}> Quản Thông Tin Sách </li>
-            
-            {/* <li className="p-2 hover:bg-teal-600 cursor-pointer">Trang chủ</li>
-            <li className="p-2 hover:bg-teal-600 cursor-pointer">Hệ thống</li>
-            <li className="p-2 hover:bg-teal-600 cursor-pointer">Danh mục</li>
-            <li className="p-2 hover:bg-teal-600 cursor-pointer">Quản lý kho kệ</li>
-            <li className="p-2 hover:bg-teal-600 cursor-pointer">Quản lý xuất nhập</li>
-            <li className="p-2 hover:bg-teal-600 cursor-pointer">Quản lý mượn trả</li>
-            <li className="p-2 hover:bg-teal-600 cursor-pointer">Báo cáo</li> */}
-        </ul>
-    </div>
+          <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleAuthorManagement}>Quản lý Tác giả</li>
+          <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handlePublisherManagement}>Quản lý Nhà Xuất Bản</li>
+          <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleCategoryManagement}>Quản lý Loại Sách</li>
+          <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleBookManagement}>Quản Thông Tin Sách</li>
 
-    {/* Main Content */}
-    <div className="w-4/5 bg-white p-4">
+          <li className="p-2 hover:bg-teal-600 cursor-pointer mt-8 text-red-200" onClick={handleLogout}>
+            Đăng xuất
+          </li>
+        </ul>
+      </div>
+
+      {/* Main Content */}
+      <div className="w-4/5 bg-white p-4">
         <div className="flex justify-between items-center mb-4">
-            <h1 className="text-xl font-bold">Tài khoản</h1>
-            <div className="flex items-center space-x-2">
-                <button className="bg-blue-500 text-white px-4 py-2 rounded">Thêm</button>
-                <button className="bg-gray-300 text-gray-700 px-4 py-2 rounded">Sửa</button>
-                <button className="bg-gray-300 text-gray-700 px-4 py-2 rounded">Reset password</button>
-                <button className="bg-gray-300 text-gray-700 px-4 py-2 rounded">Xóa</button>
-            </div>
+          <h1 className="text-xl font-bold">Quản lý người dùng</h1>
+          <div className="flex items-center space-x-2">
+            <button className="bg-blue-500 text-white px-4 py-2 rounded">
+              Thêm
+            </button>
+            <button 
+              className={`${selectedUsers.length === 1 ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-700'} px-4 py-2 rounded`}
+              disabled={selectedUsers.length !== 1}
+            >
+              Sửa
+            </button>
+            <button 
+              className={`${selectedUsers.length > 0 ? 'bg-yellow-500 text-white' : 'bg-gray-300 text-gray-700'} px-4 py-2 rounded`}
+              disabled={selectedUsers.length === 0}
+            >
+              Reset mật khẩu
+            </button>
+            <button 
+              className={`${selectedUsers.length > 0 ? 'bg-red-500 text-white' : 'bg-gray-300 text-gray-700'} px-4 py-2 rounded`}
+              disabled={selectedUsers.length === 0}
+            >
+              Xóa
+            </button>
+            <button 
+              className="bg-green-500 text-white px-4 py-2 rounded"
+              onClick={exportToCSV}
+            >
+              Xuất CSV
+            </button>
+          </div>
         </div>
+
         <div className="flex space-x-2 mb-4">
-            <select className="border border-gray-300 p-2 rounded">
-                <option>Lọc theo tên</option>
-            </select>
-            <select className="border border-gray-300 p-2 rounded">
-                <option>Lọc theo số điện thoại</option>
-            </select>
-            <input type="text" className="border border-gray-300 p-2 rounded flex-grow" placeholder="Tìm kiếm" />
-            <button className="bg-blue-500 text-white px-4 py-2 rounded"><i className="fas fa-search"></i></button>
+          <input 
+            type="text" 
+            className="border border-gray-300 p-2 rounded flex-grow" 
+            placeholder="Tìm kiếm theo tên, email hoặc số điện thoại" 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <button className="bg-blue-500 text-white px-4 py-2 rounded">
+            <i className="fas fa-search"></i> Tìm kiếm
+          </button>
         </div>
-        <table className="w-full border-collapse border border-gray-300">
-            <thead>
+
+        {isLoading ? (
+          <div className="text-center py-4">Đang tải dữ liệu...</div>
+        ) : error ? (
+          <div className="text-center py-4 text-red-500">{error}</div>
+        ) : (
+          <>
+            <table className="w-full border-collapse border border-gray-300">
+              <thead>
                 <tr className="bg-teal-100">
-                    <th className="border border-gray-300 p-2"><input type="checkbox" /></th>
-                    <th className="border border-gray-300 p-2">Tài khoản</th>
-                    <th className="border border-gray-300 p-2">Họ tên</th>
-                    <th className="border border-gray-300 p-2">Điện thoại</th>
-                    <th className="border border-gray-300 p-2">Email</th>
-                    <th className="border border-gray-300 p-2">Trạng thái</th>
+                  <th className="border border-gray-300 p-2">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0} 
+                      onChange={handleSelectAll}
+                    />
+                  </th>
+                  <th className="border border-gray-300 p-2">ID</th>
+                  <th className="border border-gray-300 p-2">Họ tên</th>
+                  <th className="border border-gray-300 p-2">Email</th>
+                  <th className="border border-gray-300 p-2">Số điện thoại</th>
+                  <th className="border border-gray-300 p-2">Vai trò</th>
                 </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td className="border border-gray-300 p-2"><input type="checkbox" /></td>
-                    <td className="border border-gray-300 p-2">Admin</td>
-                    <td className="border border-gray-300 p-2">Administrator</td>
-                    <td className="border border-gray-300 p-2">0912345678</td>
-                    <td className="border border-gray-300 p-2">Administrator@gmail.c</td>
-                    <td className="border border-gray-300 p-2"><span className="bg-green-500 text-white px-2 py-1 rounded">Kích hoạt</span></td>
-                </tr>
-                <tr>
-                    <td className="border border-gray-300 p-2"><input type="checkbox" /></td>
-                    <td className="border border-gray-300 p-2">demo</td>
-                    <td className="border border-gray-300 p-2">demo</td>
-                    <td className="border border-gray-300 p-2">0987654321</td>
-                    <td className="border border-gray-300 p-2">abc@tcsoft.vn</td>
-                    <td className="border border-gray-300 p-2"><span className="bg-green-500 text-white px-2 py-1 rounded">Kích hoạt</span></td>
-                </tr>
-                <tr>
-                    <td className="border border-gray-300 p-2"><input type="checkbox" /></td>
-                    <td className="border border-gray-300 p-2">521TCN1001</td>
-                    <td className="border border-gray-300 p-2">Nguyễn Thị Vân Anh</td>
-                    <td className="border border-gray-300 p-2">12345</td>
-                    <td className="border border-gray-300 p-2">521TCN1001</td>
-                    <td className="border border-gray-300 p-2"><span className="bg-green-500 text-white px-2 py-1 rounded">Kích hoạt</span></td>
-                </tr>
-                <tr>
-                    <td className="border border-gray-300 p-2"><input type="checkbox" /></td>
-                    <td className="border border-gray-300 p-2">520YCT1001</td>
-                    <td className="border border-gray-300 p-2">Phó Long An</td>
-                    <td className="border border-gray-300 p-2">0395025459</td>
-                    <td className="border border-gray-300 p-2">Phó Long An</td>
-                    <td className="border border-gray-300 p-2"><span className="bg-green-500 text-white px-2 py-1 rounded">Kích hoạt</span></td>
-                </tr>
-                <tr>
-                    <td className="border border-gray-300 p-2"><input type="checkbox" /></td>
-                    <td className="border border-gray-300 p-2">nguyenhai</td>
-                    <td className="border border-gray-300 p-2">Trần Nguyên Hải</td>
-                    <td className="border border-gray-300 p-2">12345</td>
-                    <td className="border border-gray-300 p-2">nahai.haui@gmail.c</td>
-                    <td className="border border-gray-300 p-2"><span className="bg-green-500 text-white px-2 py-1 rounded">Kích hoạt</span></td>
-                </tr>
-                <tr>
-                    <td className="border border-gray-300 p-2"><input type="checkbox" /></td>
-                    <td className="border border-gray-300 p-2">521TCN1002</td>
-                    <td className="border border-gray-300 p-2">Trần Thị Ngọc Anh</td>
-                    <td className="border border-gray-300 p-2">12345</td>
-                    <td className="border border-gray-300 p-2">521TCN1002</td>
-                    <td className="border border-gray-300 p-2"><span className="bg-green-500 text-white px-2 py-1 rounded">Kích hoạt</span></td>
-                </tr>
-            </tbody>
-        </table>
-        <div className="flex justify-between items-center mt-4">
-            <div>Tổng: 6 bản ghi</div>
-            <div className="flex items-center space-x-2">
-                <button className="bg-gray-300 text-gray-700 px-4 py-2 rounded">1</button>
+              </thead>
+              <tbody>
+                {filteredUsers.map((user) => (
+                  <tr key={user.user_id}>
+                    <td className="border border-gray-300 p-2">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedUsers.includes(user.user_id)}
+                        onChange={() => handleSelectUser(user.user_id)}
+                      />
+                    </td>
+                    <td className="border border-gray-300 p-2">{user.user_id}</td>
+                    <td className="border border-gray-300 p-2">{user.full_name}</td>
+                    <td className="border border-gray-300 p-2">{user.email}</td>
+                    <td className="border border-gray-300 p-2">{user.phone}</td>
+                    <td className="border border-gray-300 p-2">
+                      <span className={getRoleBadgeClass(user.role)}>
+                        {user.role}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="flex justify-between items-center mt-4">
+              <div>Tổng: {filteredUsers.length} bản ghi</div>
+              <div className="flex items-center space-x-2">
+                <button className="bg-teal-500 text-white px-4 py-2 rounded">1</button>
                 <select className="border border-gray-300 p-2 rounded">
-                    <option>20 / trang</option>
+                  <option>20 / trang</option>
+                  <option>50 / trang</option>
+                  <option>100 / trang</option>
                 </select>
+              </div>
             </div>
-        </div>
+          </>
+        )}
+      </div>
     </div>
-</div>
   );
 };
 
-export default Dashboard;
+export default dashboard;
