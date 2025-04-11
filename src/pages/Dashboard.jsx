@@ -124,27 +124,6 @@ const dashboard = () => {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-xl font-bold">Quản lý người dùng</h1>
           <div className="flex items-center space-x-2">
-            <button className="bg-blue-500 text-white px-4 py-2 rounded">
-              Thêm
-            </button>
-            <button 
-              className={`${selectedUsers.length === 1 ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-700'} px-4 py-2 rounded`}
-              disabled={selectedUsers.length !== 1}
-            >
-              Sửa
-            </button>
-            <button 
-              className={`${selectedUsers.length > 0 ? 'bg-yellow-500 text-white' : 'bg-gray-300 text-gray-700'} px-4 py-2 rounded`}
-              disabled={selectedUsers.length === 0}
-            >
-              Reset mật khẩu
-            </button>
-            <button 
-              className={`${selectedUsers.length > 0 ? 'bg-red-500 text-white' : 'bg-gray-300 text-gray-700'} px-4 py-2 rounded`}
-              disabled={selectedUsers.length === 0}
-            >
-              Xóa
-            </button>
             <button 
               className="bg-green-500 text-white px-4 py-2 rounded"
               onClick={exportToCSV}
