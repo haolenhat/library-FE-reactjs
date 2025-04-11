@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const dashboard = () => {
+const Dashboard = () => {
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -31,7 +31,7 @@ const dashboard = () => {
   // Filter users based on search term (name, email, or phone)
   const filteredUsers = users.filter(
     (user) =>
-      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.phone?.includes(searchTerm)
   );
@@ -50,7 +50,7 @@ const dashboard = () => {
     if (selectedUsers.length === filteredUsers.length) {
       setSelectedUsers([]);
     } else {
-      setSelectedUsers(filteredUsers.map((user) => user.user_id));
+      setSelectedUsers(filteredUsers.map((user) => user.userId));
     }
   };
 
@@ -59,7 +59,7 @@ const dashboard = () => {
     const csvHeader = "ID,Họ tên,Email,Số điện thoại,Vai trò\n";
     const csvRows = filteredUsers.map(
       (user) =>
-        `"${user.user_id}","${user.full_name}","${user.email}","${user.phone}","${user.role}"`
+        `"${user.userId}","${user.fullName}","${user.email}","${user.phone}","${user.role}"`
     );
 
     const csvContent = "\uFEFF" + csvHeader + csvRows.join("\n");
@@ -174,16 +174,16 @@ const dashboard = () => {
               </thead>
               <tbody>
                 {filteredUsers.map((user) => (
-                  <tr key={user.user_id}>
+                  <tr key={user.userId}>
                     <td className="border border-gray-300 p-2">
                       <input 
                         type="checkbox" 
-                        checked={selectedUsers.includes(user.user_id)}
-                        onChange={() => handleSelectUser(user.user_id)}
+                        checked={selectedUsers.includes(user.userId)}
+                        onChange={() => handleSelectUser(user.userId)}
                       />
                     </td>
-                    <td className="border border-gray-300 p-2">{user.user_id}</td>
-                    <td className="border border-gray-300 p-2">{user.full_name}</td>
+                    <td className="border border-gray-300 p-2">{user.userId}</td>
+                    <td className="border border-gray-300 p-2">{user.fullName}</td>
                     <td className="border border-gray-300 p-2">{user.email}</td>
                     <td className="border border-gray-300 p-2">{user.phone}</td>
                     <td className="border border-gray-300 p-2">
@@ -214,4 +214,4 @@ const dashboard = () => {
   );
 };
 
-export default dashboard;
+export default Dashboard;
