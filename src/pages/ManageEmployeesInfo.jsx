@@ -12,6 +12,8 @@ const ManageEmployeesInfos = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteUserId, setDeleteUserId] = useState(null);
+  const [currentUserRole, setCurrentUserRole] = useState("");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const navigate = useNavigate();
 
   // Form state for editing user - updated to include password
@@ -22,6 +24,40 @@ const ManageEmployeesInfos = () => {
     role: "LIBRARIAN",
     password: ""
   });
+
+  // Form state for adding new user
+  const [addForm, setAddForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    role: "LIBRARIAN",
+    password: ""
+  });
+
+  // Check user authentication and role
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (!userStr) {
+      // Redirect to login if user is not logged in
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userStr);
+      setCurrentUserRole(user.role);
+      
+      // If not an admin, redirect to appropriate page
+      if (user.role !== "ADMIN") {
+        // You might want to show a message or redirect to a different page
+        console.log("Non-admin users have limited access to this page");
+      }
+    } catch (error) {
+      console.error("Error parsing user data:", error);
+      // Redirect to login in case of invalid data
+      navigate("/login");
+    }
+  }, [navigate]);
 
   // Fetch users data
   const fetchUsers = async () => {
@@ -63,11 +99,20 @@ const ManageEmployeesInfos = () => {
     setIsEditModalOpen(true);
   };
 
-  // Handle form change
+  // Handle form change for edit form
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setEditForm({
       ...editForm,
+      [name]: value
+    });
+  };
+
+  // Handle form change for add form
+  const handleAddFormChange = (e) => {
+    const { name, value } = e.target;
+    setAddForm({
+      ...addForm,
       [name]: value
     });
   };
@@ -102,6 +147,47 @@ const ManageEmployeesInfos = () => {
     } catch (error) {
       console.error("Error updating user:", error);
       alert(`Failed to update user: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Submit add form
+  const handleAddSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      setIsLoading(true);
+      // Make sure we're sending all required fields
+      const dataToSend = {
+        fullName: addForm.fullName,
+        email: addForm.email,
+        phone: addForm.phone,
+        role: addForm.role,
+        password: addForm.password
+      };
+      
+      console.log("Sending data for new user:", dataToSend);
+      await axios.post("http://localhost:8080/api/users/create", dataToSend);
+      
+      // Refresh user list
+      await fetchUsers();
+      
+      // Close modal and reset form
+      setIsAddModalOpen(false);
+      setAddForm({
+        fullName: "",
+        email: "",
+        phone: "",
+        role: "LIBRARIAN",
+        password: ""
+      });
+      
+      // Show success notification
+      alert("User added successfully!");
+    } catch (error) {
+      console.error("Error adding user:", error);
+      alert(`Failed to add user: ${error.response?.data?.message || error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -187,6 +273,18 @@ const ManageEmployeesInfos = () => {
     }
   };
   
+  // Function to open Add User modal
+  const openAddModal = () => {
+    setAddForm({
+      fullName: "",
+      email: "",
+      phone: "",
+      role: "LIBRARIAN",
+      password: ""
+    });
+    setIsAddModalOpen(true);
+  };
+  
   return (
     <div className="flex">
 
@@ -194,27 +292,37 @@ const ManageEmployeesInfos = () => {
       <div className="w-4/5 bg-white p-4">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-xl font-bold">Quản lý người dùng</h1>
-          <div className="flex items-center space-x-2">
-            <button 
-              className={`${selectedUsers.length === 1 ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-700'} px-4 py-2 rounded`}
-              disabled={selectedUsers.length !== 1}
-              onClick={() => {
-                if (selectedUsers.length === 1) {
-                  const selectedUser = users.find(user => user.userId === selectedUsers[0]);
-                  if (selectedUser) handleEditUser(selectedUser);
-                }
-              }}
-            >
-              Sửa
-            </button>
-            <button 
-              className={`${selectedUsers.length > 0 ? 'bg-red-500 text-white' : 'bg-gray-300 text-gray-700'} px-4 py-2 rounded`}
-              disabled={selectedUsers.length === 0}
-              onClick={handleBulkDelete}
-            >
-              Xóa
-            </button>
-          </div>
+          
+          {/* Only show action buttons for ADMIN users */}
+          {currentUserRole === "ADMIN" && (
+            <div className="flex items-center space-x-2">
+              <button 
+                className="bg-green-500 text-white px-4 py-2 rounded" 
+                onClick={openAddModal}
+              >
+                Thêm mới
+              </button>
+              <button 
+                className={`${selectedUsers.length === 1 ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-700'} px-4 py-2 rounded`}
+                disabled={selectedUsers.length !== 1}
+                onClick={() => {
+                  if (selectedUsers.length === 1) {
+                    const selectedUser = users.find(user => user.userId === selectedUsers[0]);
+                    if (selectedUser) handleEditUser(selectedUser);
+                  }
+                }}
+              >
+                Sửa
+              </button>
+              <button 
+                className={`${selectedUsers.length > 0 ? 'bg-red-500 text-white' : 'bg-gray-300 text-gray-700'} px-4 py-2 rounded`}
+                disabled={selectedUsers.length === 0}
+                onClick={handleBulkDelete}
+              >
+                Xóa
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex space-x-2 mb-4">
@@ -230,7 +338,7 @@ const ManageEmployeesInfos = () => {
           </button>
         </div>
 
-        {isLoading && !isEditModalOpen && !isDeleteModalOpen ? (
+        {isLoading && !isEditModalOpen && !isDeleteModalOpen && !isAddModalOpen ? (
           <div className="text-center py-4">Đang tải dữ liệu...</div>
         ) : error ? (
           <div className="text-center py-4 text-red-500">{error}</div>
@@ -239,31 +347,37 @@ const ManageEmployeesInfos = () => {
             <table className="w-full border-collapse border border-gray-300">
               <thead>
                 <tr className="bg-teal-100">
-                  <th className="border border-gray-300 p-2">
-                    <input 
-                      type="checkbox" 
-                      checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0} 
-                      onChange={handleSelectAll}
-                    />
-                  </th>
+                  {currentUserRole === "ADMIN" && (
+                    <th className="border border-gray-300 p-2">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0} 
+                        onChange={handleSelectAll}
+                      />
+                    </th>
+                  )}
                   <th className="border border-gray-300 p-2">ID</th>
                   <th className="border border-gray-300 p-2">Họ tên</th>
                   <th className="border border-gray-300 p-2">Email</th>
                   <th className="border border-gray-300 p-2">Số điện thoại</th>
                   <th className="border border-gray-300 p-2">Vai trò</th>
-                  <th className="border border-gray-300 p-2">Thao tác</th>
+                  {currentUserRole === "ADMIN" && (
+                    <th className="border border-gray-300 p-2">Thao tác</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.map((user) => (
                   <tr key={user.userId}>
-                    <td className="border border-gray-300 p-2">
-                      <input 
-                        type="checkbox" 
-                        checked={selectedUsers.includes(user.userId)}
-                        onChange={() => handleSelectUser(user.userId)}
-                      />
-                    </td>
+                    {currentUserRole === "ADMIN" && (
+                      <td className="border border-gray-300 p-2">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedUsers.includes(user.userId)}
+                          onChange={() => handleSelectUser(user.userId)}
+                        />
+                      </td>
+                    )}
                     <td className="border border-gray-300 p-2">{user.userId}</td>
                     <td className="border border-gray-300 p-2">{user.fullName}</td>
                     <td className="border border-gray-300 p-2">{user.email}</td>
@@ -273,22 +387,24 @@ const ManageEmployeesInfos = () => {
                         {user.role}
                       </span>
                     </td>
-                    <td className="border border-gray-300 p-2">
-                      <div className="flex space-x-2 justify-center">
-                        <button 
-                          className="bg-blue-500 text-white px-2 py-1 rounded text-sm"
-                          onClick={() => handleEditUser(user)}
-                        >
-                          Sửa
-                        </button>
-                        <button 
-                          className="bg-red-500 text-white px-2 py-1 rounded text-sm"
-                          onClick={() => handleDeleteClick(user.userId)}
-                        >
-                          Xóa
-                        </button>
-                      </div>
-                    </td>
+                    {currentUserRole === "ADMIN" && (
+                      <td className="border border-gray-300 p-2">
+                        <div className="flex space-x-2 justify-center">
+                          <button 
+                            className="bg-blue-500 text-white px-2 py-1 rounded text-sm"
+                            onClick={() => handleEditUser(user)}
+                          >
+                            Sửa
+                          </button>
+                          <button 
+                            className="bg-red-500 text-white px-2 py-1 rounded text-sm"
+                            onClick={() => handleDeleteClick(user.userId)}
+                          >
+                            Xóa
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -400,6 +516,104 @@ const ManageEmployeesInfos = () => {
                   disabled={isLoading}
                 >
                   {isLoading ? "Đang xử lý..." : "Lưu thay đổi"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add User Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg w-1/2">
+            <h2 className="text-xl font-bold mb-4">Thêm người dùng mới</h2>
+            <form onSubmit={handleAddSubmit}>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="add-fullName">
+                  Họ tên
+                </label>
+                <input
+                  type="text"
+                  id="add-fullName"
+                  name="fullName"
+                  value={addForm.fullName}
+                  onChange={handleAddFormChange}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="add-email">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="add-email"
+                  name="email"
+                  value={addForm.email}
+                  onChange={handleAddFormChange}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="add-phone">
+                  Số điện thoại
+                </label>
+                <input
+                  type="text"
+                  id="add-phone"
+                  name="phone"
+                  value={addForm.phone}
+                  onChange={handleAddFormChange}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="add-password">
+                  Mật khẩu
+                </label>
+                <input
+                  type="password"
+                  id="add-password"
+                  name="password"
+                  value={addForm.password}
+                  onChange={handleAddFormChange}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  required
+                />
+              </div>
+              <div className="mb-6">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="add-role">
+                  Vai trò
+                </label>
+                <select
+                  id="add-role"
+                  name="role"
+                  value={addForm.role}
+                  onChange={handleAddFormChange}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                >
+                  <option value="ADMIN">Admin</option>
+                  <option value="LIBRARIAN">Thủ thư</option>
+                </select>
+              </div>
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="bg-gray-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="bg-green-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Đang xử lý..." : "Thêm người dùng"}
                 </button>
               </div>
             </form>
