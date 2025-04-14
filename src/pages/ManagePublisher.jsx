@@ -1,76 +1,99 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const ManagePublishers = () => {
-  // Dữ liệu mẫu cho nhà xuất bản
-  const [publishers, setPublishers] = useState([
-    { publisher_id: 1, publisher_name: "NXB Kim Đồng" },
-    { publisher_id: 2, publisher_name: "NXB Trẻ" },
-    { publisher_id: 3, publisher_name: "NXB Văn Học" },
-    { publisher_id: 4, publisher_name: "NXB Tổng Hợp TPHCM" },
-    { publisher_id: 5, publisher_name: "NXB Giáo Dục" },
-    { publisher_id: 6, publisher_name: "NXB Hội Nhà Văn" },
-    { publisher_id: 7, publisher_name: "NXB Phụ Nữ" }
-  ]);
-
+  const [publishers, setPublishers] = useState([]);
   const [newPublisher, setNewPublisher] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState("");
 
-  // Hàm thêm nhà xuất bản mới (giả lập)
-  const handleAddPublisher = () => {
+  // Lấy danh sách nhà xuất bản từ API
+  const fetchPublishers = async () => {
+    try {
+      const res = await axios.get('/api/publishers/all');
+      setPublishers(res.data);
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách NXB:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPublishers();
+  }, []);
+
+  // Thêm nhà xuất bản mới
+  const handleAddPublisher = async () => {
     if (newPublisher.trim() !== "") {
-      const newId = Math.max(...publishers.map(p => p.publisher_id)) + 1;
-      setPublishers([...publishers, { publisher_id: newId, publisher_name: newPublisher }]);
-      setNewPublisher("");
+      try {
+        const res = await axios.post('/api/publishers/add', {
+          publisherName: newPublisher
+        });
+        setPublishers([...publishers, res.data]);
+        setNewPublisher("");
+      } catch (error) {
+        console.error("Lỗi khi thêm NXB:", error);
+        alert("Thêm thất bại!");
+      }
     }
   };
 
-  // Hàm xóa nhà xuất bản (giả lập)
-  const handleDeletePublisher = (id) => {
-    setPublishers(publishers.filter(publisher => publisher.publisher_id !== id));
+  // Xoá nhà xuất bản
+  const handleDeletePublisher = async (id) => {
+    try {
+      await axios.delete(`/api/publishers/delete/${id}`);
+      setPublishers(publishers.filter(p => p.publisherId !== id));
+    } catch (error) {
+      console.error("Lỗi khi xoá NXB:", error);
+      alert("Xoá thất bại!");
+    }
   };
 
-  // Hàm bắt đầu chỉnh sửa
+  // Bắt đầu chỉnh sửa
   const startEditing = (publisher) => {
-    setEditingId(publisher.publisher_id);
-    setEditValue(publisher.publisher_name);
+    setEditingId(publisher.publisherId);
+    setEditValue(publisher.publisherName);
   };
 
-  // Hàm lưu chỉnh sửa
-  const saveEdit = () => {
+  // Lưu chỉnh sửa
+  const saveEdit = async () => {
     if (editValue.trim() !== "") {
-      setPublishers(publishers.map(publisher => 
-        publisher.publisher_id === editingId ? 
-        { ...publisher, publisher_name: editValue } : publisher
-      ));
-      setEditingId(null);
+      try {
+        const res = await axios.put(`/api/publishers/edit/${editingId}`, {
+          publisherName: editValue
+        });
+        setPublishers(publishers.map(p =>
+          p.publisherId === editingId ? res.data : p
+        ));
+        setEditingId(null);
+        setEditValue("");
+      } catch (error) {
+        console.error("Lỗi khi cập nhật NXB:", error);
+        alert("Cập nhật thất bại!");
+      }
     }
   };
 
-  // Lọc nhà xuất bản theo từ khóa tìm kiếm
-  const filteredPublishers = publishers.filter(publisher => 
-    publisher.publisher_name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPublishers = publishers.filter(p =>
+    p.publisherName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6 text-blue-600">Quản Lý Nhà Xuất Bản</h1>
-      
-      {/* Phần tìm kiếm */}
+
+      {/* Tìm kiếm */}
       <div className="mb-6">
-        <div className="flex gap-4">
-          <input
-            type="text"
-            placeholder="Tìm kiếm nhà xuất bản..."
-            className="p-2 border rounded flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+        <input
+          type="text"
+          placeholder="Tìm kiếm nhà xuất bản..."
+          className="p-2 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
-      
-      {/* Phần thêm nhà xuất bản mới */}
+
+      {/* Thêm nhà xuất bản */}
       <div className="mb-6 bg-blue-50 p-4 rounded shadow">
         <h2 className="text-xl font-semibold mb-3 text-blue-700">Thêm Nhà Xuất Bản Mới</h2>
         <div className="flex gap-2">
@@ -89,13 +112,13 @@ const ManagePublishers = () => {
           </button>
         </div>
       </div>
-      
+
       {/* Danh sách nhà xuất bản */}
       <div className="bg-white rounded shadow overflow-hidden">
         <h2 className="text-xl font-semibold p-4 bg-gray-50 border-b">
           Danh Sách Nhà Xuất Bản ({filteredPublishers.length})
         </h2>
-        
+
         {filteredPublishers.length > 0 ? (
           <table className="w-full">
             <thead>
@@ -107,10 +130,10 @@ const ManagePublishers = () => {
             </thead>
             <tbody>
               {filteredPublishers.map(publisher => (
-                <tr key={publisher.publisher_id} className="border-t hover:bg-gray-50">
-                  <td className="p-3">{publisher.publisher_id}</td>
+                <tr key={publisher.publisherId} className="border-t hover:bg-gray-50">
+                  <td className="p-3">{publisher.publisherId}</td>
                   <td className="p-3">
-                    {editingId === publisher.publisher_id ? (
+                    {editingId === publisher.publisherId ? (
                       <input
                         type="text"
                         className="p-1 border rounded w-full"
@@ -118,11 +141,11 @@ const ManagePublishers = () => {
                         onChange={(e) => setEditValue(e.target.value)}
                       />
                     ) : (
-                      publisher.publisher_name
+                      publisher.publisherName
                     )}
                   </td>
                   <td className="p-3 flex justify-center gap-2">
-                    {editingId === publisher.publisher_id ? (
+                    {editingId === publisher.publisherId ? (
                       <button
                         onClick={saveEdit}
                         className="bg-green-600 text-white px-2 py-1 rounded text-sm hover:bg-green-700"
@@ -138,7 +161,7 @@ const ManagePublishers = () => {
                       </button>
                     )}
                     <button
-                      onClick={() => handleDeletePublisher(publisher.publisher_id)}
+                      onClick={() => handleDeletePublisher(publisher.publisherId)}
                       className="bg-red-600 text-white px-2 py-1 rounded text-sm hover:bg-red-700"
                     >
                       Xóa
