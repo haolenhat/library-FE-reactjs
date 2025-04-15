@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Registration from "./Register";
 import axios from "axios";
 
 const Login = () => {
@@ -45,6 +46,8 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+
+
   };
 
   return (
@@ -198,7 +201,7 @@ const Login = () => {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Chưa có tài khoản?{" "}
-              <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
+              <a href="/Registration" className="font-medium text-indigo-600 hover:text-indigo-500">
                 Đăng ký ngay
               </a>
             </p>
