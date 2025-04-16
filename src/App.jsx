@@ -11,6 +11,7 @@ import ManageCategory from './pages/ManageCategory'
 import ManageBook from './pages/ManageBook'
 import ManageEmployeesInfos from './pages/ManageEmployeesInfo'
 import Registration from './pages/Register'
+import Home from './pages/Home'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -20,6 +21,7 @@ function App() {
       <Route path="/" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/home" element={<Home />} />
       <Route path="/ManageAuthors" element={<ManageAuthors />} />
       <Route path="/ManageBook" element={<ManageBook />} />
       <Route path="/ManageCategory" element={<ManageCategory />} />
