@@ -9,10 +9,9 @@ const Home = () => {
     const [categories, setCategories] = useState(["Tất cả"]);
     const [activeCategory, setActiveCategory] = useState("Tất cả");
     const [borrowedCount, setBorrowedCount] = useState(0);
-    const [cart, setCart] = useState([]); // Giỏ hàng
-    const [isCartVisible, setIsCartVisible] = useState(false); // Quản lý hiển thị form giỏ hàng
-    const [borrowerInfo, setBorrowerInfo] = useState({ borrowerCode: "", borrowerName: "", returnDate: "2025-04-15" }); // Thông tin mượn sách
-    const [isFormVisible, setIsFormVisible] = useState(false); // Hiển thị form nhập thông tin mượn
+    const [cart, setCart] = useState([]);
+    const [isCartVisible, setIsCartVisible] = useState(false);
+    const [borrowerInfo, setBorrowerInfo] = useState({ borrowerCode: "", borrowerName: "", returnDate: new Date().toISOString().slice(0, 10) });
 
     useEffect(() => {
         axios
@@ -21,11 +20,7 @@ const Home = () => {
                 const data = res.data;
                 setBooks(data);
                 setFilteredBooks(data);
-
-                // Lấy các category duy nhất từ dữ liệu sách
-                const uniqueCategories = [
-                    ...new Set(data.map((book) => book.category?.categoryName).filter(Boolean)),
-                ];
+                const uniqueCategories = [...new Set(data.map((book) => book.category?.categoryName).filter(Boolean))];
                 setCategories(["Tất cả", ...uniqueCategories]);
             })
             .catch((err) => {
@@ -35,18 +30,15 @@ const Home = () => {
 
     const handleCategoryClick = (categoryName) => {
         setActiveCategory(categoryName);
-        if (categoryName === "Tất cả") {
-            setFilteredBooks(books);
-        } else {
-            setFilteredBooks(
-                books.filter((book) => book.category?.categoryName === categoryName)
-            );
-        }
+        setFilteredBooks(
+            categoryName === "Tất cả"
+                ? books
+                : books.filter((book) => book.category?.categoryName === categoryName)
+        );
     };
 
     const handleBorrowClick = (book) => {
         const existingBookIndex = cart.findIndex((item) => item.id === book.bookId);
-
         if (existingBookIndex !== -1) {
             const updatedCart = [...cart];
             updatedCart[existingBookIndex].quantity += 1;
@@ -54,7 +46,6 @@ const Home = () => {
         } else {
             setCart([...cart, { id: book.bookId, title: book.title, quantity: 1 }]);
         }
-
         setBorrowedCount((prev) => prev + 1);
     };
 
@@ -68,47 +59,36 @@ const Home = () => {
 
     const handleFormSubmit = async (e) => {
         e.preventDefault();
-
         try {
             const formattedReturnDate = borrowerInfo.returnDate + "T00:00:00";
-
-            const librarian = JSON.parse(localStorage.getItem("user")); // Lấy librarianId từ localStorage
-
+            const librarian = JSON.parse(localStorage.getItem("user"));
             const requestData = {
                 borrowerCode: borrowerInfo.borrowerCode,
                 borrowerName: borrowerInfo.borrowerName,
                 returnDate: formattedReturnDate,
                 librarianId: librarian?.userId,
-                loanCards: cart.map((item) => ({
-                    bookId: item.id,
-                    quantity: item.quantity
-                }))
+                loanCards: cart.map((item) => ({ bookId: item.id, quantity: item.quantity }))
             };
-
             const response = await axios.post("http://localhost:8080/api/loan-records/add", requestData);
-            console.log("Yêu cầu mượn sách thành công:", response.data);
             alert("Yêu cầu mượn sách thành công!");
-
-            // RESET sau khi mượn thành công
             setCart([]);
             setBorrowedCount(0);
             setBorrowerInfo({
                 borrowerCode: "",
                 borrowerName: "",
-                returnDate: new Date().toISOString().slice(0, 10) // Reset lại ngày trả về ngày hôm nay
+                returnDate: new Date().toISOString().slice(0, 10)
             });
-            setIsCartVisible(false); // Ẩn form giỏ hàng
+            setIsCartVisible(false);
         } catch (error) {
             console.error("Lỗi khi gửi yêu cầu mượn sách:", error);
-            alert("Đã xảy ra lỗi khi gửi yêu cầu mượn sách.");
+            alert("Sách mượn vượt quá số lượng cho phép.");
         }
     };
 
     const handleRemoveFromCart = (bookId) => {
-        // Xóa sách khỏi giỏ hàng dựa trên bookId
         const updatedCart = cart.filter((item) => item.id !== bookId);
         setCart(updatedCart);
-        setBorrowedCount(updatedCart.reduce((count, item) => count + item.quantity, 0)); // Cập nhật số lượng sách đã mượn
+        setBorrowedCount(updatedCart.reduce((count, item) => count + item.quantity, 0));
     };
 
     return (
@@ -141,8 +121,7 @@ const Home = () => {
                                 onClick={() => handleCategoryClick(category)}
                                 className={`flex-1 text-center py-2 whitespace-nowrap px-2 ${activeCategory === category
                                     ? "border-b-2 border-red-500 text-red-500 font-semibold"
-                                    : "text-gray-600 hover:text-red-500"
-                                    }`}
+                                    : "text-gray-600 hover:text-red-500"}`}
                             >
                                 {category}
                             </button>
@@ -173,7 +152,6 @@ const Home = () => {
                                             Còn lại: {book.availableCopies} cuốn
                                         </div>
                                     </div>
-
                                     <div className="ml-4 flex-shrink-0">
                                         <button
                                             onClick={() => handleBorrowClick(book)}
@@ -210,33 +188,26 @@ const Home = () => {
                             ))}
                         </ul>
 
-                        <div className="flex justify-between mb-4">
-                            <input
-                                type="text"
-                                placeholder="Mã người mượn"
-                                value={borrowerInfo.borrowerCode}
-                                onChange={(e) => setBorrowerInfo({ ...borrowerInfo, borrowerCode: e.target.value })}
-                                className="w-full p-2 border rounded"
-                            />
-                        </div>
-                        <div className="flex justify-between mb-4">
-                            <input
-                                type="text"
-                                placeholder="Tên người mượn"
-                                value={borrowerInfo.borrowerName}
-                                onChange={(e) => setBorrowerInfo({ ...borrowerInfo, borrowerName: e.target.value })}
-                                className="w-full p-2 border rounded"
-                            />
-                        </div>
-
-                        <div className="flex justify-between mb-4">
-                            <input
-                                type="date"
-                                value={borrowerInfo.returnDate}
-                                onChange={(e) => setBorrowerInfo({ ...borrowerInfo, returnDate: e.target.value })}
-                                className="w-full p-2 border rounded"
-                            />
-                        </div>
+                        <input
+                            type="text"
+                            placeholder="Mã người mượn"
+                            value={borrowerInfo.borrowerCode}
+                            onChange={(e) => setBorrowerInfo({ ...borrowerInfo, borrowerCode: e.target.value })}
+                            className="w-full p-2 border rounded mb-4"
+                        />
+                        <input
+                            type="text"
+                            placeholder="Tên người mượn"
+                            value={borrowerInfo.borrowerName}
+                            onChange={(e) => setBorrowerInfo({ ...borrowerInfo, borrowerName: e.target.value })}
+                            className="w-full p-2 border rounded mb-4"
+                        />
+                        <input
+                            type="date"
+                            value={borrowerInfo.returnDate}
+                            onChange={(e) => setBorrowerInfo({ ...borrowerInfo, returnDate: e.target.value })}
+                            className="w-full p-2 border rounded mb-4"
+                        />
 
                         <div className="flex justify-between">
                             <button
