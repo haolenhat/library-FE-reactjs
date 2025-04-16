@@ -10,6 +10,8 @@ const ManageBooks = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -19,11 +21,19 @@ const ManageBooks = () => {
     description: "",
     publisherName: "",
     categoryName: "",
-    authorNames: []
+    authorNames: [],
+    category: {
+      categoryId: null
+    },
+    publisher: {
+      publisherId: null
+    }
   });
 
   // Lấy dữ liệu từ API
   const fetchData = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const booksRes = await axios.get('http://localhost:8080/api/books/all');
       const authorsRes = await axios.get('http://localhost:8080/api/authors/all');
@@ -36,6 +46,9 @@ const ManageBooks = () => {
       setPublishers(publishersRes.data);
     } catch (error) {
       console.error("Lỗi khi tải dữ liệu:", error);
+      setError("Không thể tải dữ liệu. Vui lòng thử lại sau!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -46,10 +59,33 @@ const ManageBooks = () => {
   // Xử lý thay đổi input
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+    
+    if (name === "categoryName") {
+      // Tìm categoryId tương ứng với categoryName được chọn
+      const selectedCategory = categories.find(cat => cat.categoryName === value);
+      setFormData({
+        ...formData,
+        categoryName: value,
+        category: {
+          categoryId: selectedCategory ? selectedCategory.categoryId : null
+        }
+      });
+    } else if (name === "publisherName") {
+      // Tìm publisherId tương ứng với publisherName được chọn
+      const selectedPublisher = publishers.find(pub => pub.publisherName === value);
+      setFormData({
+        ...formData,
+        publisherName: value,
+        publisher: {
+          publisherId: selectedPublisher ? selectedPublisher.publisherId : null
+        }
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
   };
 
   // Xử lý chọn tác giả (nhiều)
@@ -71,28 +107,47 @@ const ManageBooks = () => {
   const handleAddBook = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:8080/api/books/add', formData);
+      // Không cần gửi category và publisher IDs cho API add
+      const { category, publisher, ...addBookData } = formData;
+      await axios.post('http://localhost:8080/api/books/add', addBookData);
       fetchData(); // Tải lại dữ liệu sau khi thêm
       resetForm();
       setIsAdding(false);
     } catch (error) {
       console.error("Lỗi khi thêm sách:", error);
-      alert("Thêm sách thất bại!");
+      alert("Thêm sách thất bại! " + (error.response?.data?.message || ""));
     }
   };
 
-  // Xử lý chỉnh sửa sách
+  // Xử lý chỉnh sửa sách - ĐÃ CHỈNH SỬA để phù hợp với API mới
   const handleEditBook = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:8080/api/books/edit/${selectedBook.bookId}`, formData);
+      // Đảm bảo dữ liệu được gửi đúng định dạng mà API yêu cầu
+      const editBookData = {
+        title: formData.title,
+        linkImg: formData.linkImg,
+        availableCopies: formData.availableCopies,
+        description: formData.description,
+        publisherName: formData.publisherName,
+        categoryName: formData.categoryName,
+        authorNames: formData.authorNames,
+        category: {
+          categoryId: formData.category.categoryId
+        },
+        publisher: {
+          publisherId: formData.publisher.publisherId
+        }
+      };
+      
+      await axios.put(`http://localhost:8080/api/books/edit/${selectedBook.bookId}`, editBookData);
       fetchData(); // Tải lại dữ liệu sau khi sửa
       resetForm();
       setIsEditing(false);
       setSelectedBook(null);
     } catch (error) {
       console.error("Lỗi khi cập nhật sách:", error);
-      alert("Cập nhật sách thất bại!");
+      alert("Cập nhật sách thất bại! " + (error.response?.data?.message || ""));
     }
   };
 
@@ -104,12 +159,12 @@ const ManageBooks = () => {
         setBooks(books.filter(book => book.bookId !== bookId));
       } catch (error) {
         console.error("Lỗi khi xóa sách:", error);
-        alert("Xóa sách thất bại!");
+        alert("Xóa sách thất bại! " + (error.response?.data?.message || ""));
       }
     }
   };
 
-  // Bắt đầu chỉnh sửa sách - Đã sửa để xử lý khi category là null
+  // Bắt đầu chỉnh sửa sách - ĐÃ CHỈNH SỬA để cập nhật formData với category và publisher ID
   const startEditing = (book) => {
     setSelectedBook(book);
     setFormData({
@@ -118,10 +173,15 @@ const ManageBooks = () => {
       availableCopies: book.availableCopies || 0,
       description: book.description || "",
       publisherName: book.publisher?.publisherName || "",
-      
-      // Xử lý khi category là null
       categoryName: book.category?.categoryName || "",
-      authorNames: book.authors?.map(author => author.authorName) || []
+      authorNames: book.authors?.map(author => author.authorName) || [],
+      // Thêm category và publisher object với ID
+      category: {
+        categoryId: book.category?.categoryId || null
+      },
+      publisher: {
+        publisherId: book.publisher?.publisherId || null
+      }
     });
     setIsEditing(true);
     setIsAdding(false);
@@ -136,7 +196,13 @@ const ManageBooks = () => {
       description: "",
       publisherName: "",
       categoryName: "",
-      authorNames: []
+      authorNames: [],
+      category: {
+        categoryId: null
+      },
+      publisher: {
+        publisherId: null
+      }
     });
   };
 
@@ -144,10 +210,30 @@ const ManageBooks = () => {
   const filteredBooks = books.filter(book =>
     book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (book.description && book.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (book.authors && book.authors.some(author => author.authorName.toLowerCase().includes(searchTerm.toLowerCase()))) ||
+    (book.authors && book.authors.some(author => 
+      author.authorName.toLowerCase().includes(searchTerm.toLowerCase())
+    )) ||
     (book.publisher && book.publisher.publisherName.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (book.category && book.category.categoryName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  if (loading) {
+    return <div className="max-w-6xl mx-auto p-6 text-center">Đang tải dữ liệu...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-6xl mx-auto p-6 text-center text-red-600">
+        {error}
+        <button 
+          onClick={fetchData}
+          className="block mx-auto mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+        >
+          Thử lại
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -333,7 +419,7 @@ const ManageBooks = () => {
                   <tr key={book.bookId} className="border-t hover:bg-gray-50">
                     <td className="p-3">
                       <img 
-                        src={book.linkImg} 
+                        src={book.linkImg || "https://placehold.co/100x150?text=No+Image"} 
                         alt={book.title} 
                         className="w-16 h-20 object-cover"
                         onError={(e) => {
@@ -343,10 +429,12 @@ const ManageBooks = () => {
                     </td>
                     <td className="p-3 font-medium">{book.title}</td>
                     <td className="p-3">
-                      {book.authors.map(author => author.authorName).join(", ")}
+                      {book.authors && book.authors.length > 0 
+                        ? book.authors.map(author => author.authorName).join(", ")
+                        : "Không có tác giả"}
                     </td>
                     <td className="p-3">{book.category ? book.category.categoryName : "Chưa phân loại"}</td>
-                    <td className="p-3">{book.publisher.publisherName}</td>
+                    <td className="p-3">{book.publisher ? book.publisher.publisherName : "Không có NXB"}</td>
                     <td className="p-3">{book.availableCopies}</td>
                     <td className="p-3">
                       <div className="flex justify-center gap-2">
@@ -373,8 +461,6 @@ const ManageBooks = () => {
           <p className="p-6 text-center text-gray-500">Không tìm thấy sách nào</p>
         )}
       </div>
-      
-      {/* Chi tiết sách modal/section có thể thêm sau nếu cần */}
     </div>
   );
 };
