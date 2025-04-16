@@ -1,254 +1,382 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
-const ManageBook = () => {
-  // Dữ liệu mẫu cho Thông Tin Sách
-  const [books, setbooks] = useState([
-    { book_id: 1, book_name: "Tết ở làng Địa Ngục", quantity: 10, borrow: 2, status: 'new', category: 'Kinh Dị', author: 'Nam Cao', publisher: 'NXB Kim Đồng' },
-    { book_id: 2, book_name: "Ngôi nhà kỳ quái", quantity: 10, borrow: 2, status: 'new', category: 'Kinh Dị', author: 'Nam Cao', publisher: 'NXB Kim Đồng' },
-    { book_id: 3, book_name: "Lớp có Tang sự không cần điểm danh", quantity: 10, borrow: 2, status: 'new', category: 'Kinh Dị', author: 'Nam Cao', publisher: 'NXB Kim Đồng' },
-  ]);
-
-  const [newbook, setNewbook] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [category, setCategory] = useState("");
-  const [author, setAuthor] = useState("");
-  const [publisher, setPublisher] = useState("");
+const ManageBooks = () => {
+  const [books, setBooks] = useState([]);
+  const [authors, setAuthors] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [publishers, setPublishers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingId, setEditingId] = useState(null);
-  const [editValue, setEditValue] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedBook, setSelectedBook] = useState(null);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    title: "",
+    linkImg: "",
+    availableCopies: 0,
+    description: "",
+    publisherName: "",
+    categoryName: "",
+    authorNames: []
+  });
 
-  // Hàm thêm Thông Tin Sách mới (giả lập)
-  const handleAddbook = () => {
-    if (newbook.trim() !== "") {
-      const newId = Math.max(...books.map(p => p.book_id)) + 1;
-        setbooks([...books, { book_id: newId, book_name: newbook, quantity: quantity, borrow: 0, status: 'new', category: category, author: author, publisher: publisher}]);
-      setNewbook("");
+  // Lấy dữ liệu từ API
+  const fetchData = async () => {
+    try {
+      const booksRes = await axios.get('http://localhost:8080/api/books/all');
+      const authorsRes = await axios.get('http://localhost:8080/api/authors/all');
+      const categoriesRes = await axios.get('http://localhost:8080/api/categories/all');
+      const publishersRes = await axios.get('http://localhost:8080/api/publishers/all');
+      
+      setBooks(booksRes.data);
+      setAuthors(authorsRes.data);
+      setCategories(categoriesRes.data);
+      setPublishers(publishersRes.data);
+    } catch (error) {
+      console.error("Lỗi khi tải dữ liệu:", error);
     }
   };
 
-  // Hàm xóa Thông Tin Sách (giả lập)
-  const handleDeletebook = (id) => {
-    setbooks(books.filter(book => book.book_id !== id));
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Xử lý thay đổi input
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
   };
 
-  // Hàm bắt đầu chỉnh sửa
+  // Xử lý chọn tác giả (nhiều)
+  const handleAuthorChange = (e) => {
+    const options = e.target.options;
+    const selectedValues = [];
+    for (let i = 0; i < options.length; i++) {
+      if (options[i].selected) {
+        selectedValues.push(options[i].value);
+      }
+    }
+    setFormData({
+      ...formData,
+      authorNames: selectedValues
+    });
+  };
+
+  // Xử lý thêm sách mới
+  const handleAddBook = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post('http://localhost:8080/api/books/add', formData);
+      fetchData(); // Tải lại dữ liệu sau khi thêm
+      resetForm();
+      setIsAdding(false);
+    } catch (error) {
+      console.error("Lỗi khi thêm sách:", error);
+      alert("Thêm sách thất bại!");
+    }
+  };
+
+  // Xử lý chỉnh sửa sách
+  const handleEditBook = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`http://localhost:8080/api/books/edit/${selectedBook.bookId}`, formData);
+      fetchData(); // Tải lại dữ liệu sau khi sửa
+      resetForm();
+      setIsEditing(false);
+      setSelectedBook(null);
+    } catch (error) {
+      console.error("Lỗi khi cập nhật sách:", error);
+      alert("Cập nhật sách thất bại!");
+    }
+  };
+
+  // Xử lý xóa sách
+  const handleDeleteBook = async (bookId) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa sách này?")) {
+      try {
+        await axios.delete(`http://localhost:8080/api/books/delete/${bookId}`);
+        setBooks(books.filter(book => book.bookId !== bookId));
+      } catch (error) {
+        console.error("Lỗi khi xóa sách:", error);
+        alert("Xóa sách thất bại!");
+      }
+    }
+  };
+
+  // Bắt đầu chỉnh sửa sách - Đã sửa để xử lý khi category là null
   const startEditing = (book) => {
-    setEditingId(book.book_id);
-    setEditValue(book.book_name);
+    setSelectedBook(book);
+    setFormData({
+      title: book.title || "",
+      linkImg: book.linkImg || "",
+      availableCopies: book.availableCopies || 0,
+      description: book.description || "",
+      publisherName: book.publisher?.publisherName || "",
+      
+      // Xử lý khi category là null
+      categoryName: book.category?.categoryName || "",
+      authorNames: book.authors?.map(author => author.authorName) || []
+    });
+    setIsEditing(true);
+    setIsAdding(false);
   };
 
-  // Hàm lưu chỉnh sửa
-  const saveEdit = () => {
-    if (editValue.trim() !== "") {
-      setbooks(books.map(book => 
-        book.book_id === editingId ? 
-        { ...book, book_name: editValue } : book
-      ));
-      setEditingId(null);
-    }
+  // Reset form
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      linkImg: "",
+      availableCopies: 0,
+      description: "",
+      publisherName: "",
+      categoryName: "",
+      authorNames: []
+    });
   };
 
-  // Lọc Thông Tin Sách theo từ khóa tìm kiếm
-  const filteredbooks = books.filter(book => 
-    book.book_name.toLowerCase().includes(searchTerm.toLowerCase())
+  // Lọc sách theo từ khóa tìm kiếm
+  const filteredBooks = books.filter(book =>
+    book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (book.description && book.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (book.authors && book.authors.some(author => author.authorName.toLowerCase().includes(searchTerm.toLowerCase()))) ||
+    (book.publisher && book.publisher.publisherName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (book.category && book.category.categoryName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-blue-600">Quản Lý Thông Tin Sách</h1>
-      
-      {/* Phần tìm kiếm */}
-      <div className="mb-6">
-        <div className="flex gap-4">
-          <input
-            type="text"
-            placeholder="Tìm kiếm Thông Tin Sách..."
-            className="p-2 border rounded flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+    <div className="max-w-6xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6 text-blue-600">Quản Lý Sách</h1>
+
+      {/* Tìm kiếm */}
+      <div className="mb-6 flex">
+        <input
+          type="text"
+          placeholder="Tìm kiếm sách..."
+          className="p-2 border rounded flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <button 
+          onClick={() => {
+            setIsAdding(!isAdding);
+            setIsEditing(false);
+            resetForm();
+          }}
+          className="ml-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
+        >
+          {isAdding ? "Đóng" : "Thêm Sách Mới"}
+        </button>
       </div>
-      
-      {/* Phần thêm Thông Tin Sách mới */}
-      <div className="mb-6 bg-blue-50 p-4 rounded shadow">
-        <h2 className="text-xl font-semibold mb-3 text-blue-700">Thêm Thông Tin Sách Mới</h2>
-        <div className="flex flex-col gap-2">
-          <input
-            type="text"
-            id="newbook"
-            placeholder="Nhập tên Sách mới..."
-            className="p-2 border rounded flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={newbook}
-            onChange={(e) => setNewbook(e.target.value)}
-          />
-          <input
-            type="number"
-            id="quantity"
-            placeholder="Nhập số lượng Sách mới..."
-            className="p-2 border rounded flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Nhập loai Sách mới..."
-            className="p-2 border rounded flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Nhập tác giả mới..."
-            className="p-2 border rounded flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Nhập tên NXB Sách mới..."
-            className="p-2 border rounded flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={publisher}
-            onChange={(e) => setPublisher(e.target.value)}
-          />
-          <button
-            onClick={handleAddbook}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-          >
-            Thêm
-          </button>
+
+      {/* Form thêm/sửa sách */}
+      {(isAdding || isEditing) && (
+        <div className="mb-8 bg-blue-50 p-6 rounded shadow">
+          <h2 className="text-xl font-semibold mb-4 text-blue-700">
+            {isAdding ? "Thêm Sách Mới" : "Chỉnh Sửa Sách"}
+          </h2>
+          <form onSubmit={isAdding ? handleAddBook : handleEditBook}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block mb-1 font-medium">Tên Sách</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  className="p-2 border rounded w-full"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block mb-1 font-medium">Link Hình Ảnh</label>
+                <input
+                  type="text"
+                  name="linkImg"
+                  value={formData.linkImg}
+                  onChange={handleChange}
+                  className="p-2 border rounded w-full"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block mb-1 font-medium">Số Lượng</label>
+                <input
+                  type="number"
+                  name="availableCopies"
+                  value={formData.availableCopies}
+                  onChange={handleChange}
+                  className="p-2 border rounded w-full"
+                  min="0"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block mb-1 font-medium">Loại Sách</label>
+                <select
+                  name="categoryName"
+                  value={formData.categoryName}
+                  onChange={handleChange}
+                  className="p-2 border rounded w-full"
+                  required
+                >
+                  <option value="">-- Chọn Loại Sách --</option>
+                  {categories.map(category => (
+                    <option key={category.categoryId} value={category.categoryName}>
+                      {category.categoryName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block mb-1 font-medium">Nhà Xuất Bản</label>
+                <select
+                  name="publisherName"
+                  value={formData.publisherName}
+                  onChange={handleChange}
+                  className="p-2 border rounded w-full"
+                  required
+                >
+                  <option value="">-- Chọn Nhà Xuất Bản --</option>
+                  {publishers.map(publisher => (
+                    <option key={publisher.publisherId} value={publisher.publisherName}>
+                      {publisher.publisherName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block mb-1 font-medium">Tác Giả (giữ Ctrl để chọn nhiều)</label>
+                <select
+                  name="authorNames"
+                  multiple
+                  value={formData.authorNames}
+                  onChange={handleAuthorChange}
+                  className="p-2 border rounded w-full h-32"
+                  required
+                >
+                  {authors.map(author => (
+                    <option key={author.authorId} value={author.authorName}>
+                      {author.authorName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="md:col-span-2">
+                <label className="block mb-1 font-medium">Mô Tả</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="p-2 border rounded w-full h-32"
+                  required
+                ></textarea>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAdding(false);
+                  setIsEditing(false);
+                  resetForm();
+                }}
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-colors"
+              >
+                {isAdding ? "Thêm" : "Lưu"}
+              </button>
+            </div>
+          </form>
         </div>
-      </div>
-      
-      {/* Danh sách Thông Tin Sách */}
+      )}
+
+      {/* Danh sách sách */}
       <div className="bg-white rounded shadow overflow-hidden">
         <h2 className="text-xl font-semibold p-4 bg-gray-50 border-b">
-          Danh Sách Thông Tin Sách ({filteredbooks.length})
+          Danh Sách Sách ({filteredBooks.length})
         </h2>
-        
-        {filteredbooks.length > 0 ? (
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-100 text-left">
-                <th className="p-3 font-semibold w-16">ID</th>
-                <th className="p-3 font-semibold">Tên Sách</th>
-                <th className="p-3 font-semibold">Số lượng</th>
-                <th className="p-3 font-semibold">Tình trạng</th>
-                <th className="p-3 font-semibold">Loại sách</th>
-                <th className="p-3 font-semibold">Tác giả</th>
-                <th className="p-3 font-semibold">NXB</th>
-                <th className="p-3 font-semibold w-32 text-center">Thao Tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredbooks.map(book => (
-                <tr key={book.book_id} className="border-t hover:bg-gray-50">
-                  <td className="p-3">{book.book_id}</td>
-                  <td className="p-3">
-                    {editingId === book.book_id ? (
-                      <input
-                        type="text"
-                        className="p-1 border rounded w-full"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                      />
-                    ) : (
-                      book.book_name
-                    )}
-                      </td>
-                      <td className="p-3">
-                    {editingId === book.book_id ? (
-                      <input
-                        type="text"
-                        className="p-1 border rounded w-full"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                      />
-                    ) : (
-                      book.quantity
-                    )}
-                      </td>
-                      <td className="p-3">
-                    {editingId === book.book_id ? (
-                      <input
-                        type="text"
-                        className="p-1 border rounded w-full"
-                        value={quantity}
-                        onChange={(e) => setEditValue(e.target.value)}
-                      />
-                    ) : (
-                      book.status
-                    )}
-                      </td>
-                      <td className="p-3">
-                    {editingId === book.book_id ? (
-                      <input
-                        type="text"
-                        className="p-1 border rounded w-full"
-                        value={borrow}
-                        onChange={(e) => setEditValue(e.target.value)}
-                      />
-                    ) : (
-                      book.category
-                    )}
-                      </td>
-                      <td className="p-3">
-                    {editingId === book.book_id ? (
-                      <input
-                        type="text"
-                        className="p-1 border rounded w-full"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                      />
-                    ) : (
-                      book.author
-                    )}
-                      </td>
-                      <td className="p-3">
-                    {editingId === book.book_id ? (
-                      <input
-                        type="text"
-                        className="p-1 border rounded w-full"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                      />
-                    ) : (
-                      book.publisher
-                    )}
-                  </td>
-                  <td className="p-3 flex justify-center gap-2">
-                    {editingId === book.book_id ? (
-                      <button
-                        onClick={saveEdit}
-                        className="bg-green-600 text-white px-2 py-1 rounded text-sm hover:bg-green-700"
-                      >
-                        Lưu
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => startEditing(book)}
-                        className="bg-blue-600 text-white px-2 py-1 rounded text-sm hover:bg-blue-700"
-                      >
-                        Sửa
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleDeletebook(book.book_id)}
-                      className="bg-red-600 text-white px-2 py-1 rounded text-sm hover:bg-red-700"
-                    >
-                      Xóa
-                    </button>
-                  </td>
+
+        {filteredBooks.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-100 text-left">
+                  <th className="p-3 font-semibold">Hình Ảnh</th>
+                  <th className="p-3 font-semibold">Tên Sách</th>
+                  <th className="p-3 font-semibold">Tác Giả</th>
+                  <th className="p-3 font-semibold">Loại Sách</th>
+                  <th className="p-3 font-semibold">NXB</th>
+                  <th className="p-3 font-semibold">Số Lượng</th>
+                  <th className="p-3 font-semibold w-24 text-center">Thao Tác</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredBooks.map(book => (
+                  <tr key={book.bookId} className="border-t hover:bg-gray-50">
+                    <td className="p-3">
+                      <img 
+                        src={book.linkImg} 
+                        alt={book.title} 
+                        className="w-16 h-20 object-cover"
+                        onError={(e) => {
+                          e.target.src = "https://placehold.co/100x150?text=No+Image";
+                        }}
+                      />
+                    </td>
+                    <td className="p-3 font-medium">{book.title}</td>
+                    <td className="p-3">
+                      {book.authors.map(author => author.authorName).join(", ")}
+                    </td>
+                    <td className="p-3">{book.category ? book.category.categoryName : "Chưa phân loại"}</td>
+                    <td className="p-3">{book.publisher.publisherName}</td>
+                    <td className="p-3">{book.availableCopies}</td>
+                    <td className="p-3">
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() => startEditing(book)}
+                          className="bg-blue-600 text-white px-2 py-1 rounded text-sm hover:bg-blue-700"
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBook(book.bookId)}
+                          className="bg-red-600 text-white px-2 py-1 rounded text-sm hover:bg-red-700"
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
-          <p className="p-4 text-center text-gray-500">Không tìm thấy Thông Tin Sách nào</p>
+          <p className="p-6 text-center text-gray-500">Không tìm thấy sách nào</p>
         )}
       </div>
+      
+      {/* Chi tiết sách modal/section có thể thêm sau nếu cần */}
     </div>
   );
 };
 
-export default ManageBook;
+export default ManageBooks;
