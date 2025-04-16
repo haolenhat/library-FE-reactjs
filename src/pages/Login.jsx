@@ -32,12 +32,12 @@ const Login = () => {
       if (response.data.role === "ADMIN") {
         navigate("/dashboard");
       } else {
-        navigate("/dashboard");
+        navigate("/home");
       }
-      
+
     } catch (error) {
       console.error("Login error:", error);
-      
+
       if (error.response && error.response.status === 401) {
         setError("Số điện thoại hoặc mật khẩu không chính xác");
       } else {
