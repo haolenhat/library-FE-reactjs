@@ -12,6 +12,7 @@ import ManageBook from './pages/ManageBook'
 import ManageEmployeesInfos from './pages/ManageEmployeesInfo'
 import Registration from './pages/Register'
 import Home from './pages/Home'
+import BorrowCard from './pages/BorrowCard'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -22,6 +23,7 @@ function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/home" element={<Home />} />
+      <Route path="/borrow" element={<BorrowCard />} />
       <Route path="/ManageAuthors" element={<ManageAuthors />} />
       <Route path="/ManageBook" element={<ManageBook />} />
       <Route path="/ManageCategory" element={<ManageCategory />} />
