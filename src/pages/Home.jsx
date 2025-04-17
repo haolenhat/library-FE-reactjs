@@ -113,10 +113,7 @@ const Home = () => {
                         Quản lí phiếu mượn/trả
                     </Link>
 
-                    <Link to="/paid" className="cursor-pointer hover:opacity-80">
-                        <FontAwesomeIcon className="mr-[10px] text-blue-500" icon={faClock} />
-                        Phiếu phạt
-                    </Link>
+
                     <div className="relative">
                         <FontAwesomeIcon
                             icon={faCartPlus}
