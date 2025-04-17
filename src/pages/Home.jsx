@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBook, faCartPlus } from "@fortawesome/free-solid-svg-icons";
+import { faBook, faCartPlus, faFile, faClock, faRotateLeft } from "@fortawesome/free-solid-svg-icons";
+import { Link } from "react-router-dom";
 
 const Home = () => {
     const [books, setBooks] = useState([]);
@@ -11,7 +12,12 @@ const Home = () => {
     const [borrowedCount, setBorrowedCount] = useState(0);
     const [cart, setCart] = useState([]);
     const [isCartVisible, setIsCartVisible] = useState(false);
-    const [borrowerInfo, setBorrowerInfo] = useState({ borrowerCode: "", borrowerName: "", returnDate: new Date().toISOString().slice(0, 10) });
+    const [borrowerInfo, setBorrowerInfo] = useState({
+        borrowerCode: "",
+        borrowerName: "",
+        returnDate: new Date().toISOString().slice(0, 10),
+        lostOrDamagedFee: 0.00
+    });
 
     useEffect(() => {
         axios
@@ -67,6 +73,8 @@ const Home = () => {
                 borrowerName: borrowerInfo.borrowerName,
                 returnDate: formattedReturnDate,
                 librarianId: librarian?.userId,
+                status: "Borrowed", // Đặt status mặc định là Borrowed
+                lostOrDamagedFee: borrowerInfo.lostOrDamagedFee, // Lấy giá trị từ người dùng nhập
                 loanCards: cart.map((item) => ({ bookId: item.id, quantity: item.quantity }))
             };
             const response = await axios.post("http://localhost:8080/api/loan-records/add", requestData);
@@ -76,7 +84,8 @@ const Home = () => {
             setBorrowerInfo({
                 borrowerCode: "",
                 borrowerName: "",
-                returnDate: new Date().toISOString().slice(0, 10)
+                returnDate: new Date().toISOString().slice(0, 10),
+                lostOrDamagedFee: 0.00
             });
             setIsCartVisible(false);
         } catch (error) {
@@ -99,6 +108,15 @@ const Home = () => {
                         <FontAwesomeIcon icon={faBook} className="text-red-500 mr-2" />
                         Tổng hợp sách trong thư viện
                     </h1>
+                    <Link to="/borrow" className="cursor-pointer hover:opacity-80 flex items-center">
+                        <FontAwesomeIcon className="mr-[10px] text-blue-500" icon={faFile} />
+                        Quản lí phiếu mượn/trả
+                    </Link>
+
+                    <div className="cursor-pointer hover:opacity-80">
+                        <FontAwesomeIcon className="mr-[10px] text-blue-500" icon={faClock} />
+                        Phiếu quá hạn
+                    </div>
                     <div className="relative">
                         <FontAwesomeIcon
                             icon={faCartPlus}
@@ -172,7 +190,7 @@ const Home = () => {
             {isCartVisible && (
                 <div className="fixed top-0 left-0 right-0 bottom-0 bg-gray-500 bg-opacity-50 flex justify-center items-center">
                     <div className="bg-white p-8 rounded-lg shadow-lg w-1/3">
-                        <h2 className="text-xl font-bold mb-4">Giỏ hàng</h2>
+                        <h2 className="text-xl font-bold mb-4">Danh sách sách đã chọn</h2>
                         <ul>
                             {cart.map((item) => (
                                 <li key={item.id} className="flex justify-between mb-4">
@@ -206,6 +224,13 @@ const Home = () => {
                             type="date"
                             value={borrowerInfo.returnDate}
                             onChange={(e) => setBorrowerInfo({ ...borrowerInfo, returnDate: e.target.value })}
+                            className="w-full p-2 border rounded mb-4"
+                        />
+                        <input
+                            type="number"
+                            placeholder="Tiền thiệt hại mất sách"
+                            value={borrowerInfo.lostOrDamagedFee}
+                            onChange={(e) => setBorrowerInfo({ ...borrowerInfo, lostOrDamagedFee: parseFloat(e.target.value) })}
                             className="w-full p-2 border rounded mb-4"
                         />
 
