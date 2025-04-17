@@ -112,8 +112,6 @@ const Home = () => {
                         <FontAwesomeIcon className="mr-[10px] text-blue-500" icon={faFile} />
                         Quản lí phiếu mượn/trả
                     </Link>
-
-
                     <div className="relative">
                         <FontAwesomeIcon
                             icon={faCartPlus}
