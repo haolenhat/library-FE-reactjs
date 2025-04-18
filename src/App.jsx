@@ -10,6 +10,7 @@ import ManagePublishers from './pages/ManagePublisher'
 import ManageCategory from './pages/ManageCategory'
 import ManageBook from './pages/ManageBook'
 import ManageEmployeesInfos from './pages/ManageEmployeesInfo'
+import ManageBorrowers from './pages/ManageBorrowers'
 import Registration from './pages/Register'
 import Home from './pages/Home'
 import BorrowCard from './pages/BorrowCard'
@@ -30,7 +31,7 @@ function App() {
       <Route path="/ManageCategory" element={<ManageCategory />} />
       <Route path="/ManagePublishers" element={<ManagePublishers />} />
       <Route path="/ManageEmployeesInfos" element={<ManageEmployeesInfos />} />
-      <Route path="/ManageBorrower" element={<ManageBorrower />} />
+      <Route path="/ManageBorrowers" element={<ManageBorrowers />} />
       <Route path="/Registration" element={<Registration />} />
     </Routes>
   )
