@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBook, faCartPlus, faFile, faClock, faRotateLeft } from "@fortawesome/free-solid-svg-icons";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Home = () => {
     const [books, setBooks] = useState([]);
@@ -13,6 +13,7 @@ const Home = () => {
     const [cart, setCart] = useState([]);
     const [isCartVisible, setIsCartVisible] = useState(false);
     const [booksBorrowCount, setBooksBorrowCount] = useState([]);
+    const navigate = useNavigate();
     const [borrowerInfo, setBorrowerInfo] = useState({
         borrowerCode: "",
         borrowerName: "",
@@ -139,102 +140,152 @@ const Home = () => {
         setBorrowedCount(updatedCart.reduce((count, item) => count + item.quantity, 0));
     };
 
+    // Navigation functions
+    const handleAuthorManagement = () => {
+        navigate("/ManageAuthors"); // Chuyển hướng đến trang quản lý tác giả
+    };
+
+    const handlePublisherManagement = () => {
+        navigate("/ManagePublishers"); // Chuyển hướng đến trang quản lý nhà xuất bản
+    };
+
+    const handleCategoryManagement = () => {
+        navigate("/ManageCategory"); // Chuyển hướng đến trang quản lý loại sách
+    };
+
+    const handleBookManagement = () => {
+        navigate("/ManageBook"); // Chuyển hướng đến trang quản lý thông tin sách
+    };
+    
+    const handleUserManagement = () => {
+        navigate("/ManageEmployeesInfos"); // Chuyển hướng đến trang quản lý thông tin người dùng
+    };
+
+        
+    const handleUserBorrower = () => {
+        navigate("/ManageBorrower"); // Chuyển hướng đến trang quản lý thông tin người dùng
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem("user"); // Xóa dữ liệu đăng nhập
+        navigate("/"); // Chuyển hướng về trang đăng nhập
+    };
+
     return (
-        <div className="min-h-screen">
-            <div className="max-w-6xl mx-auto mt-8">
-                <div className="flex justify-between items-center mb-4 relative">
-                    <h1 className="text-2xl font-bold flex items-center">
-                        <FontAwesomeIcon icon={faBook} className="text-red-500 mr-2" />
-                        Tổng hợp sách trong thư viện
-                    </h1>
-                    <Link to="/borrow" className="cursor-pointer hover:opacity-80 flex items-center">
-                        <FontAwesomeIcon className="mr-[10px] text-blue-500" icon={faFile} />
-                        Quản lí phiếu mượn/trả
-                    </Link>
-                    <div className="relative">
-                        <FontAwesomeIcon
-                            icon={faCartPlus}
-                            className="text-green-500 text-xl cursor-pointer"
-                            onClick={handleCartToggle}
-                        />
-                        {borrowedCount > 0 && (
-                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
-                                {borrowedCount}
-                            </span>
-                        )}
-                    </div>
-                </div>
+        <div className="flex min-h-screen">
+            {/* Sidebar */}
+            <div className="w-1/5 bg-teal-500 text-white min-h-screen">
+                <div className="p-4 text-lg font-bold">QUẢN LÍ THƯ VIỆN Nhóm 3</div>
+                <ul className="space-y-2">
+                    <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleAuthorManagement}>Quản lý Tác giả</li>
+                    <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handlePublisherManagement}>Quản lý Nhà Xuất Bản</li>
+                    <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleCategoryManagement}>Quản lý Loại Sách</li>
+                    <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleBookManagement}>Quản Thông Tin Sách</li>
+                    <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleUserBorrower}>Quản Thông Tin Người mượn sách</li>
+                    <li className="p-2 hover:bg-teal-600 cursor-pointer" onClick={handleUserManagement}>Quản lý Người Dùng</li>
+                    <li className="p-2 hover:bg-teal-600 cursor-pointer mt-8 text-red-200" onClick={handleLogout}>
+                        Đăng xuất
+                    </li>
+                </ul>
+            </div>
 
-                <div className="bg-white shadow-md rounded-lg">
-                    <div className="flex border-b overflow-x-auto">
-                        {categories.map((category, idx) => (
-                            <button
-                                key={idx}
-                                onClick={() => handleCategoryClick(category)}
-                                className={`flex-1 text-center py-2 whitespace-nowrap px-2 ${activeCategory === category
-                                    ? "border-b-2 border-red-500 text-red-500 font-semibold"
-                                    : "text-gray-600 hover:text-red-500"}`}
-                            >
-                                {category}
-                            </button>
-                        ))}
+            {/* Main Content */}
+            <div className="w-4/5">
+                <div className="max-w-6xl mx-auto mt-8 px-4">
+                    <div className="flex justify-between items-centerit  mb-4 relative">
+                        <h1 className="text-2xl font-bold flex items-center">
+                            <FontAwesomeIcon icon={faBook} className="text-red-500 mr-2" />
+                            Tổng hợp sách trong thư viện
+                        </h1>
+                        <Link to="/borrow" className="cursor-pointer hover:opacity-80 flex items-center">
+                            <FontAwesomeIcon className="mr-[10px] text-blue-500" icon={faFile} />
+                            Quản lí phiếu mượn/trả
+                        </Link>
+                        <div className="relative">
+                            <FontAwesomeIcon
+                                icon={faCartPlus}
+                                className="text-green-500 text-xl cursor-pointer"
+                                onClick={handleCartToggle}
+                            />
+                            {borrowedCount > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
+                                    {borrowedCount}
+                                </span>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="p-4">
-                        {filteredBooks.length > 0 ? (
-                            filteredBooks.map((book, index) => (
-                                <div key={book.bookId} className="flex items-center mb-6">
-                                    <div className="w-16 text-center text-green-500 font-bold text-xl">
-                                        {String(index + 1).padStart(2, "0")}
-                                    </div>
-                                    <img
-                                        src={book.linkImg}
-                                        alt={book.title}
-                                        className="w-16 h-24 object-cover mr-4"
-                                    />
-                                    <div className="flex-1">
-                                        <div className="font-bold">{book.title}</div>
-                                        <div className="text-gray-600">
-                                            {book.authors.map((a) => a.authorName).join(", ")}
+                    <div className="bg-white shadow-md rounded-lg">
+                        <div className="flex border-b overflow-x-auto">
+                            {categories.map((category, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => handleCategoryClick(category)}
+                                    className={`flex-1 text-center py-2 whitespace-nowrap px-2 ${activeCategory === category
+                                        ? "border-b-2 border-red-500 text-red-500 font-semibold"
+                                        : "text-gray-600 hover:text-red-500"}`}
+                                >
+                                    {category}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="p-4">
+                            {filteredBooks.length > 0 ? (
+                                filteredBooks.map((book, index) => (
+                                    <div key={book.bookId} className="flex items-center mb-6">
+                                        <div className="w-16 text-center text-green-500 font-bold text-xl">
+                                            {String(index + 1).padStart(2, "0")}
                                         </div>
-                                        <div className="text-blue-500">
-                                            {book.category?.categoryName} - {book.publisher?.publisherName}
+                                        <img
+                                            src={book.linkImg}
+                                            alt={book.title}
+                                            className="w-16 h-24 object-cover mr-4"
+                                        />
+                                        <div className="flex-1">
+                                            <div className="font-bold">{book.title}</div>
+                                            <div className="text-gray-600">
+                                                {book.authors.map((a) => a.authorName).join(", ")}
+                                            </div>
+                                            <div className="text-blue-500">
+                                                {book.category?.categoryName} - {book.publisher?.publisherName}
+                                            </div>
+                                            <div className="text-sm text-gray-500">
+                                                Còn lại: {getActualAvailableCopies(book)} cuốn 
+                                                {getBorrowedCopies(book.bookId) > 0 && (
+                                                    <span className="ml-2 text-blue-500">
+                                                        (Đã mượn: {getBorrowedCopies(book.bookId)} cuốn)
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="text-sm text-gray-500">
-                                            Còn lại: {getActualAvailableCopies(book)} cuốn 
-                                            {getBorrowedCopies(book.bookId) > 0 && (
-                                                <span className="ml-2 text-blue-500">
-                                                    (Đã mượn: {getBorrowedCopies(book.bookId)} cuốn)
+                                        <div className="ml-4 flex-shrink-0">
+                                            {isBookAvailable(book) && (
+                                                <button
+                                                    onClick={() => handleBorrowClick(book)}
+                                                    className="bg-green-500 hover:bg-green-600 text-white py-1 px-3 rounded focus:outline-none"
+                                                >
+                                                    Cho mượn
+                                                </button>
+                                            )}
+                                            {!isBookAvailable(book) && (
+                                                <span className="text-red-500 text-sm font-medium">
+                                                    Hết sách
                                                 </span>
                                             )}
                                         </div>
                                     </div>
-                                    <div className="ml-4 flex-shrink-0">
-                                        {isBookAvailable(book) && (
-                                            <button
-                                                onClick={() => handleBorrowClick(book)}
-                                                className="bg-green-500 hover:bg-green-600 text-white py-1 px-3 rounded focus:outline-none"
-                                            >
-                                                Cho mượn
-                                            </button>
-                                        )}
-                                        {!isBookAvailable(book) && (
-                                            <span className="text-red-500 text-sm font-medium">
-                                                Hết sách
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="text-center text-gray-500">Không có sách trong danh mục này.</p>
-                        )}
+                                ))
+                            ) : (
+                                <p className="text-center text-gray-500">Không có sách trong danh mục này.</p>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
 
             {isCartVisible && (
-                <div className="fixed top-0 left-0 right-0 bottom-0 bg-gray-500 bg-opacity-50 flex justify-center items-center">
+                <div className="fixed top-0 left-0 right-0 bottom-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
                     <div className="bg-white p-8 rounded-lg shadow-lg w-1/3">
                         <h2 className="text-xl font-bold mb-4">Danh sách sách đã chọn</h2>
                         <ul>
