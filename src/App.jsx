@@ -14,6 +14,7 @@ import ManageBorrowers from './pages/ManageBorrowers'
 import Registration from './pages/Register'
 import Home from './pages/Home'
 import BorrowCard from './pages/BorrowCard'
+import ManageBorrower from './pages/ManageBorrower'
 
 function App() {
   const [count, setCount] = useState(0)
