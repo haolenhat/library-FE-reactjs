@@ -12,6 +12,7 @@ const Home = () => {
     const [borrowedCount, setBorrowedCount] = useState(0);
     const [cart, setCart] = useState([]);
     const [isCartVisible, setIsCartVisible] = useState(false);
+    const [booksBorrowCount, setBooksBorrowCount] = useState([]);
     const [borrowerInfo, setBorrowerInfo] = useState({
         borrowerCode: "",
         borrowerName: "",
@@ -20,6 +21,7 @@ const Home = () => {
     });
 
     useEffect(() => {
+        // Fetch books data
         axios
             .get("http://localhost:8080/api/books/all")
             .then((res) => {
@@ -32,7 +34,42 @@ const Home = () => {
             .catch((err) => {
                 console.error("Lỗi khi lấy dữ liệu sách:", err);
             });
+
+        // Fetch book borrow count data
+        fetchBorrowCountData();
     }, []);
+
+    // Function to fetch book borrow count data
+    const fetchBorrowCountData = () => {
+        axios
+            .get("http://localhost:8080/api/books/count")
+            .then((res) => {
+                setBooksBorrowCount(res.data);
+            })
+            .catch((err) => {
+                console.error("Lỗi khi lấy dữ liệu số lượng mượn sách:", err);
+            });
+    };
+
+    // Function to get borrowed copies for a book
+    const getBorrowedCopies = (bookId) => {
+        const bookBorrowInfo = booksBorrowCount.find(item => item.bookId === bookId);
+        return bookBorrowInfo ? bookBorrowInfo.borrowedCopies : 0;
+    };
+
+    // Function to calculate actual available copies
+    const getActualAvailableCopies = (book) => {
+        const borrowedCopies = getBorrowedCopies(book.bookId);
+        const availableCopies = book.availableCopies - borrowedCopies;
+        // Trả về 0 nếu số lượng sách khả dụng là số âm
+        return availableCopies > 0 ? availableCopies : 0;
+    };
+
+    // Function to check if a book is available for borrowing
+    const isBookAvailable = (book) => {
+        const borrowedCopies = getBorrowedCopies(book.bookId);
+        return book.availableCopies - borrowedCopies > 0;
+    };
 
     const handleCategoryClick = (categoryName) => {
         setActiveCategory(categoryName);
@@ -88,6 +125,8 @@ const Home = () => {
                 lostOrDamagedFee: 0.00
             });
             setIsCartVisible(false);
+            // Refresh borrow count data after successful submission
+            fetchBorrowCountData();
         } catch (error) {
             console.error("Lỗi khi gửi yêu cầu mượn sách:", error);
             alert("Sách mượn vượt quá số lượng cho phép.");
@@ -162,16 +201,28 @@ const Home = () => {
                                             {book.category?.categoryName} - {book.publisher?.publisherName}
                                         </div>
                                         <div className="text-sm text-gray-500">
-                                            Còn lại: {book.availableCopies} cuốn
+                                            Còn lại: {getActualAvailableCopies(book)} cuốn 
+                                            {getBorrowedCopies(book.bookId) > 0 && (
+                                                <span className="ml-2 text-blue-500">
+                                                    (Đã mượn: {getBorrowedCopies(book.bookId)} cuốn)
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="ml-4 flex-shrink-0">
-                                        <button
-                                            onClick={() => handleBorrowClick(book)}
-                                            className="bg-green-500 text-white py-1 px-3 rounded hover:bg-green-600 focus:outline-none"
-                                        >
-                                            Cho mượn
-                                        </button>
+                                        {isBookAvailable(book) && (
+                                            <button
+                                                onClick={() => handleBorrowClick(book)}
+                                                className="bg-green-500 hover:bg-green-600 text-white py-1 px-3 rounded focus:outline-none"
+                                            >
+                                                Cho mượn
+                                            </button>
+                                        )}
+                                        {!isBookAvailable(book) && (
+                                            <span className="text-red-500 text-sm font-medium">
+                                                Hết sách
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             ))
