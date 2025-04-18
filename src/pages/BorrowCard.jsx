@@ -44,16 +44,35 @@ const BorrowCard = () => {
                 },
                 body: JSON.stringify({ status: newStatus }),
             });
-
+    
             if (response.ok) {
                 // Cập nhật trạng thái trong loanRecords và filteredRecords
                 const updatedRecords = loanRecords.map((record) =>
                     record.loanId === loanId ? { ...record, status: newStatus } : record
                 );
-                setLoanRecords(updatedRecords);  // Cập nhật loanRecords
+                setLoanRecords(updatedRecords);
                 setFilteredRecords(updatedRecords.filter(record =>
                     selectedStatus === "all" || record.status === selectedStatus
-                ));  // Cập nhật filteredRecords theo status hiện tại
+                ));
+    
+                // Gọi API cập nhật lại số lượng sách sau khi thay đổi trạng thái
+                if (newStatus === "Returned") {
+                    // Cập nhật lại số lượng sách đã mượn trong hệ thống
+                    const recordToUpdate = loanRecords.find(record => record.loanId === loanId);
+                    if (recordToUpdate && Array.isArray(recordToUpdate.loanCards)) {
+                        // Gọi một API mới để cập nhật số lượng sách đã trả
+                        await fetch("http://localhost:8080/api/books/update-borrow-count", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                                loanCards: recordToUpdate.loanCards,
+                                action: "return" // Đánh dấu là hoạt động trả sách
+                            }),
+                        });
+                    }
+                }
             } else {
                 alert("Cập nhật trạng thái thất bại.");
             }

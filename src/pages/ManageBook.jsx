@@ -6,6 +6,7 @@ const ManageBooks = () => {
   const [authors, setAuthors] = useState([]);
   const [categories, setCategories] = useState([]);
   const [publishers, setPublishers] = useState([]);
+  const [booksBorrowCount, setBooksBorrowCount] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -39,11 +40,13 @@ const ManageBooks = () => {
       const authorsRes = await axios.get('http://localhost:8080/api/authors/all');
       const categoriesRes = await axios.get('http://localhost:8080/api/categories/all');
       const publishersRes = await axios.get('http://localhost:8080/api/publishers/all');
+      const booksBorrowRes = await axios.get('http://localhost:8080/api/books/count');
       
       setBooks(booksRes.data);
       setAuthors(authorsRes.data);
       setCategories(categoriesRes.data);
       setPublishers(publishersRes.data);
+      setBooksBorrowCount(booksBorrowRes.data);
     } catch (error) {
       console.error("Lỗi khi tải dữ liệu:", error);
       setError("Không thể tải dữ liệu. Vui lòng thử lại sau!");
@@ -55,6 +58,12 @@ const ManageBooks = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Hàm để lấy số lượng sách đã mượn theo bookId
+  const getBorrowedCopies = (bookId) => {
+    const bookBorrowInfo = booksBorrowCount.find(item => item.bookId === bookId);
+    return bookBorrowInfo ? bookBorrowInfo.borrowedCopies : 0;
+  };
 
   // Xử lý thay đổi input
   const handleChange = (e) => {
@@ -411,6 +420,7 @@ const ManageBooks = () => {
                   <th className="p-3 font-semibold">Loại Sách</th>
                   <th className="p-3 font-semibold">NXB</th>
                   <th className="p-3 font-semibold">Số Lượng</th>
+                  <th className="p-3 font-semibold">Đã Mượn</th>
                   <th className="p-3 font-semibold w-24 text-center">Thao Tác</th>
                 </tr>
               </thead>
@@ -436,6 +446,7 @@ const ManageBooks = () => {
                     <td className="p-3">{book.category ? book.category.categoryName : "Chưa phân loại"}</td>
                     <td className="p-3">{book.publisher ? book.publisher.publisherName : "Không có NXB"}</td>
                     <td className="p-3">{book.availableCopies}</td>
+                    <td className="p-3 font-medium text-blue-600">{getBorrowedCopies(book.bookId)}</td>
                     <td className="p-3">
                       <div className="flex justify-center gap-2">
                         <button
