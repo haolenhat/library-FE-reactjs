@@ -13,6 +13,7 @@ import ManageEmployeesInfos from './pages/ManageEmployeesInfo'
 import Registration from './pages/Register'
 import Home from './pages/Home'
 import BorrowCard from './pages/BorrowCard'
+import ManageBorrower from './pages/ManageBorrower'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -29,6 +30,7 @@ function App() {
       <Route path="/ManageCategory" element={<ManageCategory />} />
       <Route path="/ManagePublishers" element={<ManagePublishers />} />
       <Route path="/ManageEmployeesInfos" element={<ManageEmployeesInfos />} />
+      <Route path="/ManageBorrower" element={<ManageBorrower />} />
       <Route path="/Registration" element={<Registration />} />
     </Routes>
   )
